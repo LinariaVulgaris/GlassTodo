@@ -1,0 +1,5 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- App 内列表的次要文字色，与组件上的强调色区分开 -->
+    <color name="badge_default">#FF8A8A93</color>
+</resources>

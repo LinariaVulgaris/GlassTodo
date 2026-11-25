@@ -1,0 +1,98 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  待办列表的单行布局。
+
+  勾选状态用 ImageView 换图实现，不用 CheckBox：
+  CheckBox 虽然 API 31 起进了白名单，但它属于「有状态控件」，
+  在组件被拖动或调整大小时状态可能错乱，还要额外调 setCompoundButtonChecked，
+  而换图标没有任何状态需要维护。
+
+  整行 item_root 绑定 fillInIntent，点任意位置都会切换完成状态。
+-->
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:id="@+id/item_root"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:background="@android:color/transparent"
+    android:gravity="center_vertical"
+    android:orientation="horizontal"
+    android:paddingTop="7dp"
+    android:paddingEnd="6dp"
+    android:paddingBottom="7dp">
+
+    <ImageView
+        android:id="@+id/item_check"
+        android:layout_width="22dp"
+        android:layout_height="22dp"
+        android:contentDescription="@string/widget_todo_toggle"
+        android:scaleType="fitCenter"
+        android:src="@drawable/ic_check_off" />
+
+    <LinearLayout
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:layout_marginStart="10dp"
+        android:layout_weight="1"
+        android:orientation="vertical">
+
+        <TextView
+            android:id="@+id/item_title"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:ellipsize="end"
+            android:fontFamily="sans-serif"
+            android:maxLines="2"
+            android:shadowColor="#B3000000"
+            android:shadowDx="0"
+            android:shadowDy="2"
+            android:shadowRadius="8"
+            android:textColor="@color/widget_text_white"
+            android:textSize="14sp" />
+
+        <TextView
+            android:id="@+id/item_note"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="1dp"
+            android:ellipsize="end"
+            android:fontFamily="sans-serif"
+            android:maxLines="1"
+            android:shadowColor="#B3000000"
+            android:shadowDx="0"
+            android:shadowDy="2"
+            android:shadowRadius="8"
+            android:textColor="@color/widget_text_white"
+            android:textSize="11sp"
+            android:visibility="gone" />
+
+        <TextView
+            android:id="@+id/item_deadline"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="1dp"
+            android:fontFamily="sans-serif-medium"
+            android:maxLines="2"
+            android:shadowColor="#B3000000"
+            android:shadowDx="0"
+            android:shadowDy="2"
+            android:shadowRadius="8"
+            android:textColor="@color/widget_text_white"
+            android:textSize="11sp"
+            android:visibility="gone" />
+    </LinearLayout>
+
+    <TextView
+        android:id="@+id/item_badge"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginStart="8dp"
+        android:fontFamily="sans-serif-medium"
+        android:shadowColor="#B3000000"
+        android:shadowDx="0"
+        android:shadowDy="2"
+        android:shadowRadius="8"
+        android:textColor="@color/widget_text_white"
+        android:textSize="11sp"
+        android:visibility="gone" />
+
+</LinearLayout>

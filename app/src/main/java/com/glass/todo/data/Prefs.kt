@@ -1,0 +1,155 @@
+package com.glass.todo.data
+
+import android.content.Context
+import android.content.SharedPreferences
+import androidx.core.content.edit
+
+/**
+ * 组件外观与行为设置。
+ *
+ * 全部写入同一个 SharedPreferences，用 apply() 而非 commit()。
+ * apply() 会先同步更新内存中的值，后续组件刷新立刻就能读到；
+ * 磁盘写入则交给系统后台队列，避免在设置页主线程上做同步 IO。
+ */
+class Prefs(context: Context) {
+
+    private val sp: SharedPreferences =
+        context.applicationContext.getSharedPreferences(FILE, Context.MODE_PRIVATE)
+
+    /** 组件文字颜色，默认纯白 */
+    var widgetTextColor: Int
+        get() = sp.getInt(KEY_TEXT_COLOR, DEFAULT_TEXT_COLOR)
+        set(value) {
+            sp.edit { putInt(KEY_TEXT_COLOR, value) }
+        }
+
+    /** 自定义颜色槽位；选择预设后仍保留，下次打开颜色选择器可继续编辑。 */
+    var widgetCustomTextColor: Int
+        get() = sp.getInt(KEY_CUSTOM_TEXT_COLOR, DEFAULT_TEXT_COLOR) or 0xFF000000.toInt()
+        set(value) {
+            sp.edit { putInt(KEY_CUSTOM_TEXT_COLOR, value or 0xFF000000.toInt()) }
+        }
+
+    /** 组件文字大小倍率，100 表示保持原始设计字号。 */
+    var widgetFontScalePercent: Int
+        get() = sp.getInt(KEY_FONT_SCALE_PERCENT, DEFAULT_FONT_SCALE_PERCENT)
+            .coerceIn(WIDGET_FONT_SCALE_MIN, WIDGET_FONT_SCALE_MAX)
+        set(value) {
+            sp.edit {
+                putInt(KEY_FONT_SCALE_PERCENT, value.coerceIn(WIDGET_FONT_SCALE_MIN, WIDGET_FONT_SCALE_MAX))
+            }
+        }
+
+    /** 是否在文字后面垫一层半透明玻璃底板，提升浅色壁纸下的可读性 */
+    var glassPanelEnabled: Boolean
+        get() = sp.getBoolean(KEY_GLASS_PANEL, false)
+        set(value) {
+            sp.edit().putBoolean(KEY_GLASS_PANEL, value).apply()
+        }
+
+    /** 待办组件最多显示几条 */
+    var maxTodoItems: Int
+        get() = sp.getInt(KEY_MAX_ITEMS, DEFAULT_MAX_ITEMS).coerceIn(1, 20)
+        set(value) {
+            sp.edit().putInt(KEY_MAX_ITEMS, value.coerceIn(1, 20)).apply()
+        }
+
+    /** 待办组件是否显示已完成项（置灰） */
+    var showDoneInWidget: Boolean
+        get() = sp.getBoolean(KEY_SHOW_DONE, false)
+        set(value) {
+            sp.edit().putBoolean(KEY_SHOW_DONE, value).apply()
+        }
+
+    /** 某个倒数日组件实例当前锁定展示的事件 id；-1 表示自动选择最近的一个 */
+    fun selectedEventId(appWidgetId: Int): Long =
+        sp.getLong(KEY_EVENT_PREFIX + appWidgetId, AUTO_EVENT)
+
+    fun setSelectedEventId(appWidgetId: Int, eventId: Long) {
+        sp.edit().putLong(KEY_EVENT_PREFIX + appWidgetId, eventId).apply()
+    }
+
+    /** 每个组件独立保存横向、竖向、方形或自动排版。 */
+    fun widgetLayoutMode(appWidgetId: Int): WidgetLayoutMode {
+        val stored = sp.getString(KEY_LAYOUT_PREFIX + appWidgetId, null)
+        return WidgetLayoutMode.entries.firstOrNull { it.name == stored } ?: WidgetLayoutMode.AUTO
+    }
+
+    fun saveWidgetLayoutMode(appWidgetId: Int, mode: WidgetLayoutMode) {
+        sp.edit { putString(KEY_LAYOUT_PREFIX + appWidgetId, mode.name) }
+    }
+
+    /** 读取某个组件的液态玻璃配置；没有配置时默认关闭，不影响原有透明背景。 */
+    fun widgetGlassConfig(appWidgetId: Int): WidgetGlassConfig {
+        val prefix = KEY_GLASS_PREFIX + appWidgetId + "_"
+        val crop = GlassCrop(
+            left = sp.getFloat(prefix + "crop_left", 0f),
+            top = sp.getFloat(prefix + "crop_top", 0f),
+            right = sp.getFloat(prefix + "crop_right", 1f),
+            bottom = sp.getFloat(prefix + "crop_bottom", 1f)
+        ).normalized()
+        return WidgetGlassConfig(
+            enabled = sp.getBoolean(prefix + "enabled", false),
+            sourceFileName = sp.getString(prefix + "source", null),
+            crop = crop.takeIf { it.isValid },
+            strength = sp.getFloat(prefix + "strength", WidgetGlassConfig.DEFAULT_STRENGTH)
+                .coerceIn(0f, 1f)
+        )
+    }
+
+    fun saveWidgetGlassConfig(appWidgetId: Int, config: WidgetGlassConfig) {
+        val prefix = KEY_GLASS_PREFIX + appWidgetId + "_"
+        val crop = config.crop?.normalized()
+        sp.edit()
+            .putBoolean(prefix + "enabled", config.enabled)
+            .putString(prefix + "source", config.sourceFileName)
+            .putFloat(prefix + "strength", config.strength.coerceIn(0f, 1f))
+            .apply {
+                if (crop == null) {
+                    remove(prefix + "crop_left")
+                    remove(prefix + "crop_top")
+                    remove(prefix + "crop_right")
+                    remove(prefix + "crop_bottom")
+                } else {
+                    putFloat(prefix + "crop_left", crop.left)
+                    putFloat(prefix + "crop_top", crop.top)
+                    putFloat(prefix + "crop_right", crop.right)
+                    putFloat(prefix + "crop_bottom", crop.bottom)
+                }
+            }
+            .apply()
+    }
+
+    /** 组件被移除时清理它专属的设置和液态玻璃参数，避免 key 无限堆积。 */
+    fun forgetWidget(appWidgetId: Int) {
+        val eventKey = KEY_EVENT_PREFIX + appWidgetId
+        val glassPrefix = KEY_GLASS_PREFIX + appWidgetId + "_"
+        val editor = sp.edit()
+            .remove(eventKey)
+            .remove(KEY_LAYOUT_PREFIX + appWidgetId)
+        listOf(
+            "enabled", "source", "strength", "crop_left", "crop_top", "crop_right", "crop_bottom"
+        ).forEach { editor.remove(glassPrefix + it) }
+        editor.apply()
+    }
+
+    companion object {
+        private const val FILE = "glass_todo_prefs"
+        private const val KEY_TEXT_COLOR = "widget_text_color"
+        private const val KEY_CUSTOM_TEXT_COLOR = "widget_custom_text_color"
+        private const val KEY_FONT_SCALE_PERCENT = "widget_font_scale_percent"
+        private const val KEY_GLASS_PANEL = "glass_panel_enabled"
+        private const val KEY_MAX_ITEMS = "max_todo_items"
+        private const val KEY_SHOW_DONE = "show_done_in_widget"
+        private const val KEY_EVENT_PREFIX = "widget_event_"
+        private const val KEY_LAYOUT_PREFIX = "widget_layout_"
+        private const val KEY_GLASS_PREFIX = "widget_glass_"
+
+        const val DEFAULT_TEXT_COLOR = 0xFFFFFFFF.toInt()
+        const val DEFAULT_FONT_SCALE_PERCENT = 100
+        const val WIDGET_FONT_SCALE_MIN = 80
+        const val WIDGET_FONT_SCALE_MAX = 140
+        const val DEFAULT_MAX_ITEMS = 6
+        const val AUTO_EVENT = -1L
+    }
+}

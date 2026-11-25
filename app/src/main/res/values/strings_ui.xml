@@ -1,0 +1,86 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- 界面层新增文案，与组件用的 strings.xml 分开维护 -->
+    <string name="action_undo">撤销</string>
+    <string name="action_clear">清除</string>
+    <string name="deleted_undo_hint">已删除</string>
+
+    <string name="sheet_title_new_todo">新建待办</string>
+    <string name="sheet_title_edit_todo">编辑待办</string>
+    <string name="sheet_title_new_event">新建倒数日</string>
+    <string name="sheet_title_edit_event">编辑倒数日</string>
+
+    <string name="due_label">截止日</string>
+    <string name="due_none">不设截止日</string>
+    <string name="event_target_label">目标日期</string>
+    <string name="date_not_set">请选择日期</string>
+    <string name="pick_due_date">选择截止日</string>
+    <string name="pick_event_date">选择目标日期</string>
+
+    <string name="date_today">今天</string>
+    <string name="date_tomorrow">明天</string>
+    <string name="date_yesterday">昨天</string>
+
+    <string name="repeat_label">重复</string>
+
+    <string name="error_title_empty">请填写标题</string>
+    <string name="error_date_empty">请选择日期</string>
+
+    <string name="settings_intro">桌面组件是透明背景直接叠在壁纸上的，文字默认纯白。如果壁纸偏亮看不清，可以打开下面的玻璃底板，或换一个文字颜色。</string>
+    <string name="max_items_value">%1$d 条</string>
+    <string name="clear_done_done">已清空所有已完成项</string>
+
+    <!-- 液态玻璃背景 -->
+    <string name="glass_feature_title">液态玻璃（截图校准）</string>
+    <string name="glass_feature_summary">导入桌面截图并让选框对齐组件，可生成带模糊、折射和高光的静态背景。</string>
+    <string name="glass_feature_action">配置液态玻璃背景</string>
+    <string name="glass_setup_title">液态玻璃背景</string>
+    <string name="glass_setup_intro">先在桌面放好组件并截一张图，再导入截图，让选框与组件边框重合。已有组件内容也会进入背景，尽量选择只露出壁纸的区域。</string>
+    <string name="glass_target_label">配置组件</string>
+    <string name="glass_select_widget">选择组件</string>
+    <string name="glass_target_choose_title">选择要配置的组件</string>
+    <string name="glass_no_widgets">桌面上还没有 GlassTodo 组件，请先添加后再回来。</string>
+    <string name="glass_need_widget">请先选择一个组件</string>
+    <string name="glass_enabled">启用液态玻璃背景</string>
+    <string name="glass_import">导入桌面截图</string>
+    <string name="glass_need_source">请先导入桌面截图</string>
+    <string name="glass_crop_hint">拖动选框移动位置，拖动四角调整大小</string>
+    <string name="glass_lock_ratio">锁定组件比例</string>
+    <string name="glass_strength">玻璃强度</string>
+    <string name="glass_strength_value">%1$d%%</string>
+    <string name="glass_preview">预览效果</string>
+    <string name="glass_warning_static">背景为静态预渲染；移动、缩放组件或更换壁纸后需要重新校准。</string>
+    <string name="glass_clear">清除背景</string>
+    <string name="glass_clear_confirm">清除后该组件将恢复透明背景或原有玻璃底板，源截图也会删除。</string>
+    <string name="glass_save">应用背景</string>
+    <string name="glass_saved">已应用液态玻璃背景</string>
+    <string name="glass_cleared">已恢复原背景</string>
+    <string name="glass_import_failed">无法读取这张图片，请换一张截图</string>
+    <string name="glass_render_failed">背景生成失败，请重试</string>
+
+    <!-- 组件尺寸与形状 -->
+    <string name="widget_layout_title">组件尺寸与形状</string>
+    <string name="widget_layout_intro">在 App 中设置排版和形状，真实桌面占格请回到桌面长按组件后拖动边框。</string>
+    <string name="widget_layout_target_label">设置组件</string>
+    <string name="widget_layout_select_widget">选择组件</string>
+    <string name="widget_layout_choose_title">选择要设置的组件</string>
+    <string name="widget_layout_current_size">当前桌面尺寸：%1$d × %2$d dp\n宽高比：%3$.2f</string>
+    <string name="widget_layout_preset_label">布局预设</string>
+    <string name="widget_layout_auto">自动</string>
+    <string name="widget_layout_wide">横向</string>
+    <string name="widget_layout_tall">竖向</string>
+    <string name="widget_layout_square">方形</string>
+    <string name="widget_layout_preview">当前组件布局预览</string>
+    <string name="widget_layout_summary_auto">自动模式：%1$s。桌面尺寸变化后会跟随切换。</string>
+    <string name="widget_layout_summary_fixed">已固定为%1$s；实际占格大小仍需在桌面调整。</string>
+    <string name="widget_layout_todo_columns">待办显示为 %1$d 列</string>
+    <string name="widget_layout_resize_title">如何调整桌面占格</string>
+    <string name="widget_layout_resize_steps">1. 回到桌面，长按 GlassTodo 组件。\n2. 拖动四周的缩放点或边框，调整宽度和高度。\n3. 再次打开本页，尺寸和预览会自动更新。</string>
+    <string name="widget_layout_refresh_size">重新读取桌面尺寸</string>
+    <string name="widget_layout_no_widgets">桌面上还没有 GlassTodo 组件，请先添加后再回来。</string>
+    <string name="widget_layout_applied">布局已应用，桌面组件正在更新</string>
+    <string name="widget_layout_size_refreshed">已重新读取桌面尺寸</string>
+    <string name="widget_layout_settings_title">组件尺寸与形状</string>
+    <string name="widget_layout_settings_summary">查看真实桌面尺寸，选择自动、横向、竖向或方形排版。</string>
+    <string name="widget_layout_settings_action">设置尺寸与形状</string>
+</resources>

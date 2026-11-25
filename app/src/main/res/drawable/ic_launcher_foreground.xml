@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- 自适应图标前景：108x108 画布，内容控制在中间 72x72 安全区内 -->
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="108dp"
+    android:height="108dp"
+    android:viewportWidth="108"
+    android:viewportHeight="108">
+    <path
+        android:fillColor="#26FFFFFF"
+        android:pathData="M54,27A27,27 0 0,1 54,81A27,27 0 0,1 54,27Z" />
+    <path
+        android:fillColor="#00000000"
+        android:pathData="M54,27A27,27 0 0,1 54,81A27,27 0 0,1 54,27Z"
+        android:strokeColor="#FFFFFFFF"
+        android:strokeWidth="2.4" />
+    <path
+        android:fillColor="#00000000"
+        android:pathData="M43,55L51,63L67,45"
+        android:strokeColor="#FFFFFFFF"
+        android:strokeLineCap="round"
+        android:strokeLineJoin="round"
+        android:strokeWidth="4.2" />
+</vector>

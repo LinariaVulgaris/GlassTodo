@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- 组件上的强调色。因为组件直接叠在壁纸上，一律选高明度色，深浅壁纸都能看清 -->
+    <color name="widget_accent_today">#FFFFD166</color>
+    <color name="widget_accent_soon">#FFFF8FA3</color>
+    <color name="widget_accent_past">#FFB9C6DA</color>
+
+    <!-- 可选的文字配色 -->
+    <color name="widget_text_white">#FFFFFFFF</color>
+    <color name="widget_text_warm">#FFFFF4E0</color>
+    <color name="widget_text_cool">#FFE8F1FF</color>
+    <color name="widget_text_mint">#FFD6F5E3</color>
+
+    <!-- App 主题 -->
+    <color name="brand_primary">#FF6C8CFF</color>
+    <color name="brand_on_primary">#FFFFFFFF</color>
+    <color name="brand_secondary">#FF9BE7D2</color>
+
+    <color name="ic_launcher_background">#FF1B1D2A</color>
+</resources>

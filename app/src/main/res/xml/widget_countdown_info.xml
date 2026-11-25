@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  updatePeriodMillis 系统允许的最小值是 30 分钟，这里只作最后兜底；
+  真正保证跨日准确的是每日 00:05 的闹钟与 DATE_CHANGED 广播。
+  previewLayout / targetCellWidth 等属性都是 API 31 起支持的，与 minSdk 一致。
+-->
+<appwidget-provider xmlns:android="http://schemas.android.com/apk/res/android"
+    android:description="@string/widget_countdown_description"
+    android:initialKeyguardLayout="@layout/widget_countdown"
+    android:initialLayout="@layout/widget_countdown"
+    android:minWidth="110dp"
+    android:minHeight="110dp"
+    android:minResizeWidth="110dp"
+    android:minResizeHeight="70dp"
+    android:maxResizeWidth="530dp"
+    android:maxResizeHeight="450dp"
+    android:previewLayout="@layout/widget_countdown"
+    android:resizeMode="horizontal|vertical"
+    android:targetCellWidth="2"
+    android:targetCellHeight="2"
+    android:updatePeriodMillis="1800000"
+    android:widgetCategory="home_screen|keyguard" />
