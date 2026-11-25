@@ -126,7 +126,17 @@ class WidgetLayoutActivity : AppCompatActivity() {
         installModeListener()
         binding.previewLayout.bind(target, resolved)
         val detail = if (target.kind == WidgetTarget.Kind.TODO) {
-            getString(R.string.widget_layout_todo_columns, WidgetLayoutGeometry.todoColumns(resolved, target.widthDp))
+            val todoLayout = WidgetLayoutGeometry.todoLayout(resolved, target.widthDp)
+            val style = when (todoLayout) {
+                WidgetLayoutGeometry.TodoLayout.GRID -> R.string.widget_layout_todo_grid_style
+                WidgetLayoutGeometry.TodoLayout.COMPACT_LIST -> R.string.widget_layout_todo_compact_style
+                WidgetLayoutGeometry.TodoLayout.COMFORT_LIST -> R.string.widget_layout_todo_comfort_style
+            }
+            getString(
+                R.string.widget_layout_todo_columns,
+                WidgetLayoutGeometry.todoColumns(resolved, target.widthDp),
+                getString(style)
+            )
         } else {
             getString(resolved.labelRes())
         }

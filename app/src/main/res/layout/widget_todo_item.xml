@@ -64,22 +64,26 @@
             android:textColor="@color/widget_text_white"
             android:textSize="11sp"
             android:visibility="gone" />
-
-        <TextView
-            android:id="@+id/item_deadline"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:layout_marginTop="1dp"
-            android:fontFamily="sans-serif-medium"
-            android:maxLines="2"
-            android:shadowColor="#B3000000"
-            android:shadowDx="0"
-            android:shadowDy="2"
-            android:shadowRadius="8"
-            android:textColor="@color/widget_text_white"
-            android:textSize="11sp"
-            android:visibility="gone" />
     </LinearLayout>
+
+    <!-- 标题与 DDL 左右排列；窄列中 DDL 优先保证可读，标题自动省略。 -->
+    <TextView
+        android:id="@+id/item_deadline"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginStart="8dp"
+        android:ellipsize="end"
+        android:fontFamily="sans-serif-medium"
+        android:gravity="end"
+        android:maxLines="1"
+        android:maxWidth="104dp"
+        android:shadowColor="#B3000000"
+        android:shadowDx="0"
+        android:shadowDy="2"
+        android:shadowRadius="8"
+        android:textColor="@color/widget_text_white"
+        android:textSize="11sp"
+        android:visibility="gone" />
 
     <TextView
         android:id="@+id/item_badge"

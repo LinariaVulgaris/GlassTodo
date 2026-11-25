@@ -67,6 +67,24 @@ class DateTextTest {
     }
 
     @Test
+    fun `compact deadline keeps time and includes year only when needed`() {
+        val today = LocalDate.of(2026, 11, 25)
+
+        assertEquals(
+            "11/9 08:05",
+            DateText.formatCompactExactDateTime(LocalDate.of(2026, 11, 9).toEpochDay(), 485, today)
+        )
+        assertEquals(
+            "27/1/2 18:30",
+            DateText.formatCompactExactDateTime(LocalDate.of(2027, 1, 2).toEpochDay(), 1110, today)
+        )
+        assertEquals(
+            "11/9 23:59",
+            DateText.formatCompactExactDateTime(LocalDate.of(2026, 11, 9).toEpochDay(), 2000, today)
+        )
+    }
+
+    @Test
     fun `deadline minute normalization preserves disabled state`() {
         assertEquals(null, DateText.normalizeMinuteOfDay(null))
         assertEquals(0, DateText.normalizeMinuteOfDay(-10))

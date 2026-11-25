@@ -22,8 +22,11 @@ import com.glass.todo.widget.WidgetTargetCatalog
 import com.glass.todo.widget.glass.WidgetGlassStore
 import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import com.google.android.material.snackbar.Snackbar
+import kotlinx.coroutines.CancellationException
+import kotlinx.coroutines.currentCoroutineContext
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
+import kotlinx.coroutines.job
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 
@@ -61,6 +64,8 @@ class GlassSetupActivity : AppCompatActivity() {
 
         bindControls()
         targets = WidgetTargetCatalog.load(this)
+        // 先恢复比例锁状态，再异步加载图片，避免图片晚于开关恢复时丢失 unlocked 状态。
+        binding.switchLockRatio.isChecked = savedInstanceState?.getBoolean(STATE_LOCK_RATIO, true) ?: true
         val restoredId = savedInstanceState?.getInt(STATE_WIDGET_ID, INVALID_ID)
             ?.takeIf { it != INVALID_ID }
         val target = targets.firstOrNull { it.id == restoredId } ?: targets.firstOrNull()
@@ -71,7 +76,6 @@ class GlassSetupActivity : AppCompatActivity() {
                 if (values.size == 4) GlassCrop(values[0], values[1], values[2], values[3]) else null
             }
             selectTarget(target, restoredCrop)
-            binding.switchLockRatio.isChecked = savedInstanceState?.getBoolean(STATE_LOCK_RATIO, true) ?: true
             binding.switchEnabled.isChecked = savedInstanceState?.getBoolean(STATE_ENABLED, true) ?: true
             val strength = savedInstanceState?.getInt(STATE_STRENGTH, 65) ?: 65
             binding.sliderStrength.value = strength.toFloat()
@@ -140,7 +144,6 @@ class GlassSetupActivity : AppCompatActivity() {
         val target = selected ?: return
         operationJob?.cancel()
         binding.cropView.setBitmap(null)
-        sourceBitmap?.recycle()
         sourceBitmap = null
         binding.previewImage.setImageDrawable(null)
         binding.previewImage.visibility = View.GONE
@@ -165,13 +168,17 @@ class GlassSetupActivity : AppCompatActivity() {
                     binding.cropView.setDefaultCrop(target.aspectRatio)
                     val crop = restoredCrop ?: config.crop.takeIf { !pending.isFile }
                     if (crop != null) binding.cropView.setCrop(crop)
+                    binding.cropView.setLockAspect(binding.switchLockRatio.isChecked)
                 }
                 binding.textEmpty.visibility = if (bitmap == null) View.VISIBLE else View.GONE
+            } catch (e: CancellationException) {
+                throw e
             } catch (t: Throwable) {
                 Log.e(TAG, "读取液态玻璃源图失败", t)
                 binding.textEmpty.visibility = View.VISIBLE
             } finally {
-                setBusy(false)
+                // 被新任务替换的旧协程不能提前解除新任务的忙碌状态。
+                if (operationJob === currentCoroutineContext().job) setBusy(false)
             }
         }
     }
@@ -186,18 +193,20 @@ class GlassSetupActivity : AppCompatActivity() {
                 val bitmap = withContext(Dispatchers.IO) { WidgetGlassStore.loadSource(file) }
                     ?: error("decode returned null")
                 binding.cropView.setBitmap(null)
-                sourceBitmap?.recycle()
                 sourceBitmap = bitmap
                 binding.cropView.setBitmap(bitmap)
                 binding.cropView.setDefaultCrop(target.aspectRatio)
                 binding.textEmpty.visibility = View.GONE
                 binding.previewImage.setImageDrawable(null)
                 binding.previewImage.visibility = View.GONE
+            } catch (e: CancellationException) {
+                throw e
             } catch (t: Throwable) {
                 Log.e(TAG, "导入截图失败", t)
                 Snackbar.make(binding.root, R.string.glass_import_failed, Snackbar.LENGTH_LONG).show()
             } finally {
-                setBusy(false)
+                // 被新任务替换的旧协程不能提前解除新任务的忙碌状态。
+                if (operationJob === currentCoroutineContext().job) setBusy(false)
             }
         }
     }
@@ -215,11 +224,14 @@ class GlassSetupActivity : AppCompatActivity() {
                 }
                 binding.previewImage.setImageBitmap(preview)
                 binding.previewImage.visibility = View.VISIBLE
+            } catch (e: CancellationException) {
+                throw e
             } catch (t: Throwable) {
                 Log.e(TAG, "预览渲染失败", t)
                 Snackbar.make(binding.root, R.string.glass_render_failed, Snackbar.LENGTH_SHORT).show()
             } finally {
-                setBusy(false)
+                // 被新任务替换的旧协程不能提前解除新任务的忙碌状态。
+                if (operationJob === currentCoroutineContext().job) setBusy(false)
             }
         }
     }
@@ -267,6 +279,8 @@ class GlassSetupActivity : AppCompatActivity() {
                     Snackbar.LENGTH_SHORT
                 ).show()
                 finish()
+            } catch (e: CancellationException) {
+                throw e
             } catch (t: Throwable) {
                 Log.e(TAG, "保存液态玻璃背景失败", t)
                 Snackbar.make(binding.root, R.string.glass_render_failed, Snackbar.LENGTH_LONG).show()
@@ -295,17 +309,19 @@ class GlassSetupActivity : AppCompatActivity() {
                 config = WidgetGlassConfig()
                 prefs.saveWidgetGlassConfig(target.id, config)
                 binding.cropView.setBitmap(null)
-                sourceBitmap?.recycle()
                 sourceBitmap = null
                 binding.previewImage.setImageDrawable(null)
                 binding.previewImage.visibility = View.GONE
                 binding.textEmpty.visibility = View.VISIBLE
                 WidgetRefresher.refreshAll(app)
                 Snackbar.make(binding.root, R.string.glass_cleared, Snackbar.LENGTH_SHORT).show()
+            } catch (e: CancellationException) {
+                throw e
             } catch (t: Throwable) {
                 Log.e(TAG, "清除液态玻璃背景失败", t)
             } finally {
-                setBusy(false)
+                // 被新任务替换的旧协程不能提前解除新任务的忙碌状态。
+                if (operationJob === currentCoroutineContext().job) setBusy(false)
             }
         }
     }
@@ -332,6 +348,10 @@ class GlassSetupActivity : AppCompatActivity() {
         binding.btnImport.isEnabled = selected != null && !busy
         binding.btnSelectWidget.isEnabled = !busy
         binding.btnClear.isEnabled = !busy
+        binding.cropView.isEnabled = !busy
+        binding.switchLockRatio.isEnabled = !busy
+        binding.switchEnabled.isEnabled = !busy
+        binding.sliderStrength.isEnabled = !busy
     }
 
     private fun renderStrengthLabel() {

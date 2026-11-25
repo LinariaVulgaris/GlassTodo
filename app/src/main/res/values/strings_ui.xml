@@ -73,7 +73,10 @@
     <string name="widget_layout_preview">当前组件布局预览</string>
     <string name="widget_layout_summary_auto">自动模式：%1$s。桌面尺寸变化后会跟随切换。</string>
     <string name="widget_layout_summary_fixed">已固定为%1$s；实际占格大小仍需在桌面调整。</string>
-    <string name="widget_layout_todo_columns">待办显示为 %1$d 列</string>
+    <string name="widget_layout_todo_columns">待办显示为 %1$d 列 · %2$s</string>
+    <string name="widget_layout_todo_grid_style">双列网格</string>
+    <string name="widget_layout_todo_compact_style">紧凑单列</string>
+    <string name="widget_layout_todo_comfort_style">宽松单列</string>
     <string name="widget_layout_resize_title">如何调整桌面占格</string>
     <string name="widget_layout_resize_steps">1. 回到桌面，长按 GlassTodo 组件。\n2. 拖动四周的缩放点或边框，调整宽度和高度。\n3. 再次打开本页，尺寸和预览会自动更新。</string>
     <string name="widget_layout_refresh_size">重新读取桌面尺寸</string>

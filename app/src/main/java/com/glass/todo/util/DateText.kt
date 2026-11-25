@@ -26,6 +26,12 @@ object DateText {
     private val timeFormatter: DateTimeFormatter =
         DateTimeFormatter.ofPattern("HH:mm")
 
+    private val compactDateTimeFormatter: DateTimeFormatter =
+        DateTimeFormatter.ofPattern("M/d HH:mm")
+
+    private val compactDateTimeWithYearFormatter: DateTimeFormatter =
+        DateTimeFormatter.ofPattern("yy/M/d HH:mm")
+
     fun epochDayToUtcMillis(epochDay: Long): Long =
         LocalDate.ofEpochDay(epochDay).atStartOfDay(ZoneOffset.UTC).toInstant().toEpochMilli()
 
@@ -75,5 +81,21 @@ object DateText {
         }
         val timeText = formatTime(minuteOfDay)
         return if (multiline) "$dateText\n$timeText" else "$dateText $timeText"
+    }
+
+    /** 双列网格空间有限，用更短的绝对日期格式，仍保留小时、分钟和跨年信息。 */
+    fun formatCompactExactDateTime(
+        epochDay: Long,
+        minuteOfDay: Int,
+        from: LocalDate = LocalDate.now()
+    ): String {
+        val minute = normalizeMinuteOfDay(minuteOfDay) ?: 0
+        val dateTime = LocalDate.ofEpochDay(epochDay).atTime(minute / 60, minute % 60)
+        val formatter = if (dateTime.year == from.year) {
+            compactDateTimeFormatter
+        } else {
+            compactDateTimeWithYearFormatter
+        }
+        return formatter.format(dateTime)
     }
 }

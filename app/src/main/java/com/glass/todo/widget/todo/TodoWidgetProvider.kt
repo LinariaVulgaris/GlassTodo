@@ -95,8 +95,8 @@ class TodoWidgetProvider : AppWidgetProvider() {
                 val width = options.getInt(AppWidgetManager.OPTION_APPWIDGET_MAX_WIDTH, 250)
                 val height = options.getInt(AppWidgetManager.OPTION_APPWIDGET_MAX_HEIGHT, 180)
                 val mode = WidgetLayoutGeometry.resolve(width, height, prefs.widgetLayoutMode(id))
-                val columns = WidgetLayoutGeometry.todoColumns(mode, width)
-                awm.updateAppWidget(id, render(context, prefs, id, pendingCount, todos, today, columns))
+                val todoLayout = WidgetLayoutGeometry.todoLayout(mode, width)
+                awm.updateAppWidget(id, render(context, prefs, id, pendingCount, todos, today, todoLayout))
             }
         }
 
@@ -107,9 +107,13 @@ class TodoWidgetProvider : AppWidgetProvider() {
             pendingCount: Int,
             todos: List<TodoEntity>,
             today: LocalDate,
-            columns: Int
+            todoLayout: WidgetLayoutGeometry.TodoLayout
         ): RemoteViews {
-            val layout = if (columns > 1) R.layout.widget_todo_grid else R.layout.widget_todo
+            val layout = when (todoLayout) {
+                WidgetLayoutGeometry.TodoLayout.GRID -> R.layout.widget_todo_grid
+                WidgetLayoutGeometry.TodoLayout.COMPACT_LIST,
+                WidgetLayoutGeometry.TodoLayout.COMFORT_LIST -> R.layout.widget_todo
+            }
             val views = RemoteViews(context.packageName, layout)
             val base = prefs.widgetTextColor
 
@@ -135,7 +139,7 @@ class TodoWidgetProvider : AppWidgetProvider() {
             val items = RemoteViews.RemoteCollectionItems.Builder()
                 .setHasStableIds(true)
                 .setViewTypeCount(1)
-            todos.forEach { todo -> items.addItem(todo.id, buildRow(context, prefs, todo, today)) }
+            todos.forEach { todo -> items.addItem(todo.id, buildRow(context, prefs, todo, today, todoLayout)) }
 
             views.setRemoteAdapter(R.id.tw_list, items.build())
             views.setEmptyView(R.id.tw_list, R.id.tw_empty)
@@ -156,17 +160,29 @@ class TodoWidgetProvider : AppWidgetProvider() {
             context: Context,
             prefs: Prefs,
             todo: TodoEntity,
-            today: LocalDate
+            today: LocalDate,
+            todoLayout: WidgetLayoutGeometry.TodoLayout
         ): RemoteViews {
             val rv = RemoteViews(context.packageName, R.layout.widget_todo_item)
             val base = prefs.widgetTextColor
+            val titleSp = when (todoLayout) {
+                WidgetLayoutGeometry.TodoLayout.GRID -> 12f
+                WidgetLayoutGeometry.TodoLayout.COMPACT_LIST -> 13f
+                WidgetLayoutGeometry.TodoLayout.COMFORT_LIST -> 15f
+            }
+            val noteSp = if (todoLayout == WidgetLayoutGeometry.TodoLayout.COMFORT_LIST) 11f else 10f
+            val deadlineSp = when (todoLayout) {
+                WidgetLayoutGeometry.TodoLayout.GRID -> 10f
+                WidgetLayoutGeometry.TodoLayout.COMPACT_LIST -> 11f
+                WidgetLayoutGeometry.TodoLayout.COMFORT_LIST -> 12f
+            }
             WidgetTypography.apply(
                 rv,
                 prefs.widgetFontScalePercent,
-                R.id.item_title to 14f,
-                R.id.item_note to 11f,
-                R.id.item_deadline to 11f,
-                R.id.item_badge to 11f
+                R.id.item_title to titleSp,
+                R.id.item_note to noteSp,
+                R.id.item_deadline to deadlineSp,
+                R.id.item_badge to deadlineSp
             )
 
             rv.setTextViewText(R.id.item_title, todo.title)
@@ -197,15 +213,12 @@ class TodoWidgetProvider : AppWidgetProvider() {
             if (badge != null && todo.dueEpochDay != null && detailedMinute != null) {
                 rv.setViewVisibility(R.id.item_badge, View.GONE)
                 rv.setViewVisibility(R.id.item_deadline, View.VISIBLE)
-                rv.setTextViewText(
-                    R.id.item_deadline,
-                    DateText.formatExactDateTime(
-                        todo.dueEpochDay,
-                        detailedMinute,
-                        today,
-                        multiline = true
-                    )
-                )
+                val deadlineText = if (todoLayout == WidgetLayoutGeometry.TodoLayout.GRID) {
+                    DateText.formatCompactExactDateTime(todo.dueEpochDay, detailedMinute, today)
+                } else {
+                    DateText.formatExactDateTime(todo.dueEpochDay, detailedMinute, today)
+                }
+                rv.setTextViewText(R.id.item_deadline, deadlineText)
                 rv.setTextColor(
                     R.id.item_deadline,
                     badgeColor(context, base, todo, today)

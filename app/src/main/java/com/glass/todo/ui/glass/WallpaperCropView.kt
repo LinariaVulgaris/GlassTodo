@@ -10,7 +10,7 @@ import android.util.AttributeSet
 import android.view.MotionEvent
 import android.view.View
 import com.glass.todo.data.GlassCrop
-import kotlin.math.abs
+import com.glass.todo.util.GlassCropGeometry
 import kotlin.math.max
 import kotlin.math.min
 
@@ -23,14 +23,16 @@ class WallpaperCropView @JvmOverloads constructor(
 
     private var image: Bitmap? = null
     private val imageRect = RectF()
-    private val cropRect = RectF()
+    private var cropRect = RectF()
     private var crop = GlassCrop(0.12f, 0.12f, 0.88f, 0.88f)
     private var targetAspect = 1f
     private var lockAspect = true
-    private var mode = Mode.NONE
-    private var lastX = 0f
-    private var lastY = 0f
+    private var mode = GlassCropGeometry.TouchMode.NONE
+    private var activePointerId = INVALID_POINTER
+    private var gestureStartX = 0f
+    private var gestureStartY = 0f
     private val startCrop = RectF()
+    private var useDefaultCropWhenReady = false
 
     private val bitmapPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply { isFilterBitmap = true }
     private val scrimPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply { color = Color.argb(150, 0, 0, 0) }
@@ -60,11 +62,13 @@ class WallpaperCropView @JvmOverloads constructor(
 
     fun setBitmap(bitmap: Bitmap?) {
         image = bitmap
+        useDefaultCropWhenReady = false
         updateImageRect()
         invalidate()
     }
 
     fun setCrop(value: GlassCrop, notify: Boolean = false) {
+        useDefaultCropWhenReady = false
         crop = value.normalized()
         updateCropRect()
         if (notify) onCropChanged?.invoke(crop)
@@ -75,38 +79,18 @@ class WallpaperCropView @JvmOverloads constructor(
 
     fun setDefaultCrop(aspectRatio: Float) {
         targetAspect = aspectRatio.coerceAtLeast(0.1f)
-        if (imageRect.isEmpty || targetAspect <= 0f) return
-        var width = imageRect.width() * 0.72f
-        var height = width / targetAspect
-        if (height > imageRect.height() * 0.78f) {
-            height = imageRect.height() * 0.78f
-            width = height * targetAspect
-        }
-        val centerX = imageRect.centerX()
-        val centerY = imageRect.centerY()
-        cropRect.set(
-            centerX - width / 2f,
-            centerY - height / 2f,
-            centerX + width / 2f,
-            centerY + height / 2f
-        )
+        useDefaultCropWhenReady = true
+        if (imageRect.isEmpty) return
+        cropRect = GlassCropGeometry.defaultCrop(imageRect.toGeometry(), targetAspect).toRectF()
+        useDefaultCropWhenReady = false
         publishCrop()
     }
 
     fun setAspectRatio(aspectRatio: Float, adjustCurrent: Boolean = false) {
         targetAspect = aspectRatio.coerceAtLeast(0.1f)
-        if (adjustCurrent && lockAspect && !imageRect.isEmpty) {
-            val centerX = cropRect.centerX()
-            val centerY = cropRect.centerY()
-            val width = min(cropRect.width(), cropRect.height() * targetAspect)
-            val height = width / targetAspect
-            cropRect.set(
-                centerX - width / 2f,
-                centerY - height / 2f,
-                centerX + width / 2f,
-                centerY + height / 2f
-            )
-            constrainCrop()
+        if (adjustCurrent && lockAspect && !imageRect.isEmpty && !cropRect.isEmpty) {
+            cropRect = GlassCropGeometry.adjustAspect(cropRect.toGeometry(), imageRect.toGeometry(), targetAspect)
+                .toRectF()
             publishCrop()
         }
         invalidate()
@@ -120,7 +104,13 @@ class WallpaperCropView @JvmOverloads constructor(
     override fun onSizeChanged(w: Int, h: Int, oldw: Int, oldh: Int) {
         super.onSizeChanged(w, h, oldw, oldh)
         updateImageRect()
-        updateCropRect()
+        if (useDefaultCropWhenReady && !imageRect.isEmpty) {
+            cropRect = GlassCropGeometry.defaultCrop(imageRect.toGeometry(), targetAspect).toRectF()
+            useDefaultCropWhenReady = false
+            publishCrop()
+        } else {
+            updateCropRect()
+        }
     }
 
     override fun onDraw(canvas: Canvas) {
@@ -174,43 +164,76 @@ class WallpaperCropView @JvmOverloads constructor(
     }
 
     override fun onTouchEvent(event: MotionEvent): Boolean {
-        if (image == null || imageRect.isEmpty) return false
+        if (!isEnabled || image == null || imageRect.isEmpty) return false
         when (event.actionMasked) {
             MotionEvent.ACTION_DOWN -> {
-                mode = modeAt(event.x, event.y)
-                if (mode == Mode.NONE) return false
-                lastX = event.x
-                lastY = event.y
+                val touchedMode = modeAt(event.x, event.y)
+                if (touchedMode == GlassCropGeometry.TouchMode.NONE) return false
+                mode = touchedMode
+                activePointerId = event.getPointerId(0)
+                gestureStartX = event.x
+                gestureStartY = event.y
                 startCrop.set(cropRect)
+                // 必须从 DOWN 开始阻止外层 ScrollView 拦截，否则拖动会被页面滚动抢走。
                 parent?.requestDisallowInterceptTouchEvent(true)
                 return true
             }
 
             MotionEvent.ACTION_MOVE -> {
-                if (mode == Mode.NONE) return false
-                val dx = event.x - lastX
-                val dy = event.y - lastY
-                lastX = event.x
-                lastY = event.y
-                if (mode == Mode.MOVE) moveCrop(dx, dy) else resizeCrop(mode, dx, dy)
+                if (mode == GlassCropGeometry.TouchMode.NONE) return false
+                val pointerIndex = event.findPointerIndex(activePointerId)
+                if (pointerIndex < 0) return true
+                val dx = event.getX(pointerIndex) - gestureStartX
+                val dy = event.getY(pointerIndex) - gestureStartY
+                cropRect = if (mode == GlassCropGeometry.TouchMode.MOVE) {
+                    GlassCropGeometry.move(startCrop.toGeometry(), imageRect.toGeometry(), dx, dy)
+                } else {
+                    GlassCropGeometry.resize(
+                        startCrop.toGeometry(),
+                        imageRect.toGeometry(),
+                        mode,
+                        dx,
+                        dy,
+                        targetAspect,
+                        lockAspect,
+                        max(dp(40f), min(imageRect.width(), imageRect.height()) * 0.08f)
+                    )
+                }.toRectF()
                 publishCrop()
                 return true
             }
 
+            MotionEvent.ACTION_POINTER_DOWN -> {
+                // 当前只处理单指校准；保留首个活动指针，避免第二根手指导致选框跳动。
+                return mode != GlassCropGeometry.TouchMode.NONE
+            }
+
+            MotionEvent.ACTION_POINTER_UP -> {
+                if (event.getPointerId(event.actionIndex) == activePointerId) {
+                    endGesture()
+                }
+                return true
+            }
+
             MotionEvent.ACTION_UP -> {
-                mode = Mode.NONE
-                parent?.requestDisallowInterceptTouchEvent(false)
-                performClick()
+                val wasDragging = mode != GlassCropGeometry.TouchMode.NONE
+                endGesture()
+                if (wasDragging) performClick()
                 return true
             }
 
             MotionEvent.ACTION_CANCEL -> {
-                mode = Mode.NONE
-                parent?.requestDisallowInterceptTouchEvent(false)
+                endGesture()
                 return true
             }
         }
         return super.onTouchEvent(event)
+    }
+
+    private fun endGesture() {
+        mode = GlassCropGeometry.TouchMode.NONE
+        activePointerId = INVALID_POINTER
+        parent?.requestDisallowInterceptTouchEvent(false)
     }
 
     override fun performClick(): Boolean {
@@ -251,88 +274,8 @@ class WallpaperCropView @JvmOverloads constructor(
         )
     }
 
-    private fun moveCrop(dx: Float, dy: Float) {
-        val width = cropRect.width()
-        val height = cropRect.height()
-        val left = (startCrop.left + dx).coerceIn(imageRect.left, imageRect.right - width)
-        val top = (startCrop.top + dy).coerceIn(imageRect.top, imageRect.bottom - height)
-        cropRect.set(left, top, left + width, top + height)
-    }
-
-    private fun resizeCrop(corner: Mode, dx: Float, dy: Float) {
-        val minSide = max(dp(40f), min(imageRect.width(), imageRect.height()) * 0.08f)
-        if (!lockAspect) {
-            if (corner == Mode.TOP_LEFT || corner == Mode.BOTTOM_LEFT) {
-                cropRect.left = (startCrop.left + dx)
-                    .coerceIn(imageRect.left, cropRect.right - minSide)
-            } else {
-                cropRect.right = (startCrop.right + dx)
-                    .coerceIn(cropRect.left + minSide, imageRect.right)
-            }
-            if (corner == Mode.TOP_LEFT || corner == Mode.TOP_RIGHT) {
-                cropRect.top = (startCrop.top + dy)
-                    .coerceIn(imageRect.top, cropRect.bottom - minSide)
-            } else {
-                cropRect.bottom = (startCrop.bottom + dy)
-                    .coerceIn(cropRect.top + minSide, imageRect.bottom)
-            }
-            return
-        }
-
-        val anchorX = if (corner == Mode.TOP_LEFT || corner == Mode.BOTTOM_LEFT) {
-            startCrop.right
-        } else {
-            startCrop.left
-        }
-        val anchorY = if (corner == Mode.TOP_LEFT || corner == Mode.TOP_RIGHT) {
-            startCrop.bottom
-        } else {
-            startCrop.top
-        }
-        val widthFromDx = startCrop.width() + if (corner == Mode.TOP_RIGHT || corner == Mode.BOTTOM_RIGHT) dx else -dx
-        val heightFromDy = startCrop.height() + if (corner == Mode.BOTTOM_LEFT || corner == Mode.BOTTOM_RIGHT) dy else -dy
-        val useWidth = abs(widthFromDx - startCrop.width()) / startCrop.width() >=
-            abs(heightFromDy - startCrop.height()) / startCrop.height()
-        val desiredWidth = if (useWidth) widthFromDx else heightFromDy * targetAspect
-        val maxWidthByX = if (corner == Mode.TOP_LEFT || corner == Mode.BOTTOM_LEFT) {
-            anchorX - imageRect.left
-        } else {
-            imageRect.right - anchorX
-        }
-        val maxHeightByY = if (corner == Mode.TOP_LEFT || corner == Mode.TOP_RIGHT) {
-            anchorY - imageRect.top
-        } else {
-            imageRect.bottom - anchorY
-        }
-        val maxWidth = min(maxWidthByX, maxHeightByY * targetAspect).coerceAtLeast(1f)
-        val minWidth = max(minSide, minSide * targetAspect).coerceAtMost(maxWidth)
-        val width = desiredWidth.coerceIn(minWidth, maxWidth)
-        val height = width / targetAspect
-        val left = if (corner == Mode.TOP_LEFT || corner == Mode.BOTTOM_LEFT) anchorX - width else anchorX
-        val top = if (corner == Mode.TOP_LEFT || corner == Mode.TOP_RIGHT) anchorY - height else anchorY
-        cropRect.set(left, top, left + width, top + height)
-    }
-
-    private fun constrainCrop() {
-        if (imageRect.isEmpty) return
-        val width = cropRect.width().coerceAtMost(imageRect.width())
-        val height = cropRect.height().coerceAtMost(imageRect.height())
-        val left = cropRect.left.coerceIn(imageRect.left, imageRect.right - width)
-        val top = cropRect.top.coerceIn(imageRect.top, imageRect.bottom - height)
-        cropRect.set(left, top, left + width, top + height)
-    }
-
-    private fun modeAt(x: Float, y: Float): Mode {
-        val radius = dp(28f)
-        return when {
-            hypot(x - cropRect.left, y - cropRect.top) <= radius -> Mode.TOP_LEFT
-            hypot(x - cropRect.right, y - cropRect.top) <= radius -> Mode.TOP_RIGHT
-            hypot(x - cropRect.left, y - cropRect.bottom) <= radius -> Mode.BOTTOM_LEFT
-            hypot(x - cropRect.right, y - cropRect.bottom) <= radius -> Mode.BOTTOM_RIGHT
-            cropRect.contains(x, y) -> Mode.MOVE
-            else -> Mode.NONE
-        }
-    }
+    private fun modeAt(x: Float, y: Float): GlassCropGeometry.TouchMode =
+        GlassCropGeometry.touchMode(x, y, cropRect.toGeometry(), dp(28f))
 
     private fun publishCrop() {
         if (imageRect.isEmpty || cropRect.isEmpty) return
@@ -354,7 +297,11 @@ class WallpaperCropView @JvmOverloads constructor(
 
     private fun dp(value: Float): Float = value * resources.displayMetrics.density
 
-    private enum class Mode { NONE, MOVE, TOP_LEFT, TOP_RIGHT, BOTTOM_LEFT, BOTTOM_RIGHT }
+    private fun RectF.toGeometry() = GlassCropGeometry.Bounds(left, top, right, bottom)
 
-    private fun hypot(x: Float, y: Float): Float = kotlin.math.hypot(x, y)
+    private fun GlassCropGeometry.Bounds.toRectF() = RectF(left, top, right, bottom)
+
+    private companion object {
+        const val INVALID_POINTER = -1
+    }
 }

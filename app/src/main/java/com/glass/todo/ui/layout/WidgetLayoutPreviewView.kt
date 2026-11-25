@@ -124,8 +124,14 @@ class WidgetLayoutPreviewView @JvmOverloads constructor(
     }
 
     private fun drawTodo(canvas: Canvas) {
-        val columns = WidgetLayoutGeometry.todoColumns(mode, target?.widthDp ?: 0)
-        val rows = 3
+        val todoLayout = WidgetLayoutGeometry.todoLayout(mode, target?.widthDp ?: 0)
+        val columns = todoLayout.columns
+        val rows = if (todoLayout == WidgetLayoutGeometry.TodoLayout.COMFORT_LIST) 3 else 4
+        val itemTextSize = when (todoLayout) {
+            WidgetLayoutGeometry.TodoLayout.GRID -> 10f
+            WidgetLayoutGeometry.TodoLayout.COMPACT_LIST -> 11f
+            WidgetLayoutGeometry.TodoLayout.COMFORT_LIST -> 13f
+        }
         val innerLeft = cardRect.left + dp(12f)
         val innerTop = cardRect.top + dp(14f)
         val innerWidth = cardRect.width() - dp(24f)
@@ -145,12 +151,24 @@ class WidgetLayoutPreviewView @JvmOverloads constructor(
             val y = innerTop + dp(13f) + row * rowHeight
             canvas.drawCircle(x + dp(6f), y + dp(5f), dp(5f), borderPaint)
             mutedPaint.textAlign = Paint.Align.LEFT
-            canvas.drawText(
-                if (index == 0) "完成示例" else "待办事项",
+            mutedPaint.textSize = dp(itemTextSize)
+            val showDeadline = columns == 1 && index == 0
+            val deadline = "11 月 9 日 08:05"
+            val deadlineWidth = if (showDeadline) mutedPaint.measureText(deadline) + dp(8f) else 0f
+            val title = if (index == 0) "完成示例" else "待办事项"
+            canvas.save()
+            canvas.clipRect(
                 x + dp(17f),
-                y + dp(9f),
-                mutedPaint
+                y - dp(itemTextSize),
+                max(x + dp(17f), x + columnWidth - deadlineWidth),
+                y + dp(4f)
             )
+            canvas.drawText(title, x + dp(17f), y + dp(5f), mutedPaint)
+            canvas.restore()
+            if (showDeadline) {
+                mutedPaint.textAlign = Paint.Align.RIGHT
+                canvas.drawText(deadline, x + columnWidth, y + dp(5f), mutedPaint)
+            }
         }
     }
 
