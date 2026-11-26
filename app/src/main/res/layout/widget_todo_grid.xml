@@ -86,6 +86,7 @@
                 android:columnWidth="140dp"
                 android:horizontalSpacing="8dp"
                 android:numColumns="2"
+                android:overScrollMode="never"
                 android:scrollbars="none"
                 android:stretchMode="columnWidth"
                 android:verticalSpacing="0dp" />

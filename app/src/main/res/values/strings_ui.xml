@@ -24,15 +24,11 @@
 
     <!-- 组件背景 -->
     <string name="background_feature_title">背景</string>
-    <string name="background_feature_summary">为每个桌面组件上传图片或设置纯色块背景。</string>
+    <string name="background_feature_summary">为桌面待办组件上传图片或设置纯色块背景。</string>
     <string name="background_feature_action">设置组件背景</string>
     <string name="background_setup_title">组件背景</string>
-    <string name="background_setup_intro">先选择要设置的桌面组件，并确认它在桌面上的当前大小，再上传图片或选择纯色。每个组件互不影响。</string>
-    <string name="background_target_label">设置组件</string>
-    <string name="background_select_widget">选择组件</string>
-    <string name="background_target_choose_title">选择要设置的组件</string>
+    <string name="background_setup_intro">确认待办组件在桌面上的当前大小，再上传图片或选择纯色。</string>
     <string name="background_no_widgets">桌面上还没有 GlassTodo 组件，请先添加后再回来。</string>
-    <string name="background_need_widget">请先选择一个组件</string>
     <string name="background_current_size">当前桌面尺寸：%1$d × %2$d dp · 宽高比 %3$.2f</string>
     <string name="background_size_hint">请先回到桌面长按组件，拖动边框调整到满意大小，再返回这里确认。裁剪框会按确认后的组件比例生成。</string>
     <string name="background_refresh_size">重新读取桌面尺寸</string>

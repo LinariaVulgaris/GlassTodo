@@ -44,17 +44,6 @@ class MainActivity : AppCompatActivity() {
         }
         setSupportActionBar(binding.toolbar)
 
-        binding.bottomNav.setOnItemSelectedListener { item ->
-            when (item.itemId) {
-                R.id.nav_todo -> {
-                    switchTo(TAG_TODO) { TodoListFragment() }
-                    true
-                }
-
-                else -> false
-            }
-        }
-
         if (savedInstanceState == null) {
             switchTo(TAG_TODO) { TodoListFragment() }
         }
@@ -93,7 +82,6 @@ class MainActivity : AppCompatActivity() {
     private fun handleIntent(intent: Intent?) {
         if (intent?.action != WidgetIntent.ACTION_OPEN_ADD) return
         if (supportFragmentManager.findFragmentByTag(TAG_EDIT_SHEET) != null) return
-        binding.bottomNav.selectedItemId = R.id.nav_todo
         TodoEditSheet.newInstance().show(supportFragmentManager, TAG_EDIT_SHEET)
         // 消费掉，避免旋转屏幕时重复弹窗
         intent.action = null
@@ -112,7 +100,7 @@ class MainActivity : AppCompatActivity() {
         return super.onOptionsItemSelected(item)
     }
 
-    /** 用 show/hide 而不是 replace，这样切 tab 时列表滚动位置和编辑状态不会丢 */
+    /** 用 show/hide 保留列表滚动位置和编辑状态。 */
     private fun switchTo(tag: String, create: () -> Fragment) {
         val fm = supportFragmentManager
         val target = fm.findFragmentByTag(tag) ?: create()

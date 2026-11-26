@@ -34,7 +34,7 @@ import kotlinx.coroutines.job
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 
-/** 为某个已添加的桌面组件分别设置默认、图片或纯色背景。 */
+/** 为当前已添加的桌面待办组件设置默认、图片或纯色背景。 */
 class WidgetBackgroundActivity : AppCompatActivity() {
 
     private lateinit var binding: ActivityWidgetBackgroundBinding
@@ -101,7 +101,6 @@ class WidgetBackgroundActivity : AppCompatActivity() {
     }
 
     private fun bindControls() {
-        binding.btnSelectWidget.setOnClickListener { showTargetPicker() }
         binding.btnImport.setOnClickListener { confirmSizeAndImport() }
         binding.btnRefreshSize.setOnClickListener { refreshTargetsFromDesktop(showFeedback = true) }
         binding.backgroundTypeGroup.addOnButtonCheckedListener { _, checkedId, isChecked ->
@@ -140,38 +139,11 @@ class WidgetBackgroundActivity : AppCompatActivity() {
         refreshTargetsFromDesktop()
     }
 
-    private fun showTargetPicker() {
-        if (targets.isEmpty()) {
-            Toast.makeText(this, R.string.background_no_widgets, Toast.LENGTH_LONG).show()
-            return
-        }
-        val labels = targets.map { target ->
-            val hasSameSize = targets.count {
-                it.widthDp == target.widthDp && it.heightDp == target.heightDp
-            } > 1
-            if (hasSameSize) {
-                "${target.label} · ${target.widthDp} × ${target.heightDp} dp"
-            } else {
-                target.label
-            }
-        }.toTypedArray()
-        val checked = targets.indexOfFirst { it.id == selected?.id }.coerceAtLeast(0)
-        MaterialAlertDialogBuilder(this)
-            .setTitle(R.string.background_target_choose_title)
-            .setSingleChoiceItems(labels, checked) { dialog, index ->
-                selectTarget(targets[index])
-                dialog.dismiss()
-            }
-            .setNegativeButton(android.R.string.cancel, null)
-            .show()
-    }
-
     private fun selectTarget(target: WidgetTarget, restoredCrop: GlassCrop? = null) {
         operationJob?.cancel()
         selected = target
         confirmedSize = null
         config = prefs.widgetBackgroundConfig(target.id)
-        binding.textTarget.text = target.label
         renderWidgetSize()
         binding.cropView.setAspectRatio(target.aspectRatio)
         renderTypeSelection()
@@ -200,7 +172,6 @@ class WidgetBackgroundActivity : AppCompatActivity() {
         }
 
         selected = updated
-        binding.textTarget.text = updated.label
         renderWidgetSize()
         if (previous.widthDp != updated.widthDp || previous.heightDp != updated.heightDp) {
             confirmedSize = null
@@ -227,7 +198,7 @@ class WidgetBackgroundActivity : AppCompatActivity() {
 
     private fun confirmSizeAndImport() {
         if (selected == null) {
-            Toast.makeText(this, R.string.background_need_widget, Toast.LENGTH_SHORT).show()
+            Toast.makeText(this, R.string.background_no_widgets, Toast.LENGTH_SHORT).show()
             return
         }
         refreshTargetsFromDesktop()
@@ -458,7 +429,6 @@ class WidgetBackgroundActivity : AppCompatActivity() {
         selected = null
         confirmedSize = null
         config = WidgetBackgroundConfig()
-        binding.textTarget.setText(R.string.background_no_widgets)
         renderWidgetSize()
         binding.textEmpty.setText(R.string.background_no_widgets)
         binding.textEmpty.visibility = View.VISIBLE
@@ -519,7 +489,6 @@ class WidgetBackgroundActivity : AppCompatActivity() {
         binding.btnPreview.isEnabled = hasTarget && imageReady && !busy
         binding.btnImport.isEnabled = hasTarget && !busy
         binding.btnRefreshSize.isEnabled = hasTarget && targets.isNotEmpty() && !busy
-        binding.btnSelectWidget.isEnabled = hasTarget && targets.isNotEmpty() && !busy
         binding.btnClear.isEnabled = hasTarget && !busy
         binding.btnPickColor.isEnabled = hasTarget && !busy
         binding.backgroundTypeGroup.isEnabled = hasTarget && !busy

@@ -16,9 +16,10 @@
     android:background="@android:color/transparent"
     android:gravity="center_vertical"
     android:orientation="horizontal"
-    android:paddingTop="7dp"
+    android:paddingStart="0dp"
+    android:paddingTop="5dp"
     android:paddingEnd="6dp"
-    android:paddingBottom="7dp">
+    android:paddingBottom="5dp">
 
     <ImageView
         android:id="@+id/item_check"

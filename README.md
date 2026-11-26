@@ -1,6 +1,6 @@
 # GlassTodo
 
-GlassTodo 是一个使用 Kotlin 和 Android 官方 AppWidget API 开发的桌面待办应用。组件默认使用透明背景和白色文字，可直接叠加在壁纸上，也支持静态玻璃底板与自定义排版。
+GlassTodo 是一个使用 Kotlin 和 Android 官方 AppWidget API 开发的桌面待办应用。组件默认使用透明背景和白色文字，可直接叠加在壁纸上，也支持玻璃底板、图片背景和纯色背景。
 
 ## 功能
 
@@ -10,11 +10,10 @@ GlassTodo 是一个使用 Kotlin 和 Android 官方 AppWidget API 开发的桌�
 - **桌面组件**：
   - 待办组件支持自适应单列排版，可配置显示条数。
   - 可从桌面直接勾选待办、打开 App 或新建待办。
-- **外观自定义**：自定义文字颜色、字号和玻璃底板。
-- **静态液态玻璃**：导入桌面截图、校准组件区域并生成带模糊、折射和高光的背景。
+- **外观自定义**：自定义文字颜色、字号、玻璃底板、图片背景和纯色背景。
 - **自动更新**：数据变化、跨日、系统时间或时区变化、开机及应用更新后刷新组件。
 
-> 液态玻璃背景为静态预渲染，不是实时读取壁纸。移动或缩放组件、更换壁纸后，需要重新校准背景。App 内的尺寸与形状设置控制排版；实际桌面占格仍需在桌面长按组件后调整。
+> 图片背景为静态预渲染，不是实时读取壁纸。移动或缩放组件、更换壁纸后，可能需要重新裁剪背景。实际桌面占格需在桌面长按组件后调整。
 
 ## 环境要求
 
@@ -45,7 +44,22 @@ Debug APK 位于：
 app/build/outputs/apk/debug/app-debug.apk
 ```
 
-Debug 包名为 `com.glass.todo.debug`，会由 Android Gradle Plugin 自动签名，可直接安装测试。正式 Release 包名为 `com.glass.todo`，当前尚未配置发布签名；上传应用市场前需要在 `app/build.gradle.kts` 中配置自己的 keystore。
+Debug 包名为 `com.glass.todo.debug`，会由 Android Gradle Plugin 自动签名，可直接安装测试。正式 Release 包名为 `com.glass.todo`，使用项目根目录的 `keystore.properties` 指定签名信息；该文件和 keystore 均已被 `.gitignore` 排除，不会提交到仓库。
+
+```properties
+storeFile=release.keystore
+storePassword=your-store-password
+keyAlias=glass-todo
+keyPassword=your-key-password
+```
+
+配置完成后执行：
+
+```bash
+./gradlew :app:assembleRelease
+```
+
+签名 APK 位于 `app/build/outputs/apk/release/app-release.apk`。请妥善备份 keystore 和密码，后续版本必须使用同一签名才能覆盖安装。
 
 ## 测试与检查
 
@@ -82,8 +96,8 @@ Debug 包名为 `com.glass.todo.debug`，会由 Android Gradle Plugin 自动签�
 ```text
 app/src/main/java/com/glass/todo/
 ├── data/          # Room 实体、DAO、数据库迁移与偏好存储
-├── ui/            # 待办、设置、玻璃校准与布局界面
-├── util/          # 日期计算、文字格式、玻璃渲染和布局工具
+├── ui/            # 待办、设置与组件背景界面
+├── util/          # 日期计算、文字格式、背景渲染和布局工具
 └── widget/        # 桌面组件、点击动作与定时刷新
 app/schemas/       # Room 数据库结构快照
 app/src/test/      # 本地单元测试
