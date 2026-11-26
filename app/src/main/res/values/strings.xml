@@ -3,20 +3,6 @@
     <string name="app_name">GlassTodo</string>
 
     <!-- 组件 -->
-    <string name="widget_countdown_label">倒数日</string>
-    <string name="widget_countdown_description">在桌面上显示距离某个日子还有多少天</string>
-    <string name="widget_countdown_empty">还没有倒数日\n点我在 App 里添加</string>
-    <string name="widget_countdown_next">切换到下一个事件</string>
-    <!--
-        下面两条只是布局里的占位文本，用于组件选择器的预览图（previewLayout 会真实 inflate，
-        tools:text 在那里不生效）。组件每次刷新都会用真实数据覆盖它们，运行时看不到。
-    -->
-    <string name="widget_countdown_sample_number">0</string>
-    <string name="widget_countdown_prefix_remaining">还有</string>
-    <string name="widget_countdown_prefix_elapsed">已经</string>
-    <string name="widget_countdown_prefix_overdue">已过</string>
-    <string name="widget_countdown_suffix_days">天</string>
-
     <string name="widget_todo_label">待办清单</string>
     <string name="widget_todo_description">在桌面上显示待办，点一下即完成</string>
     <string name="widget_todo_header">待办</string>
@@ -25,19 +11,9 @@
     <string name="widget_todo_add">新建待办</string>
     <string name="widget_todo_toggle">切换待办完成状态</string>
 
-    <!-- 重复规则 -->
-    <string name="repeat_none">不重复</string>
-    <string name="repeat_weekly">每周</string>
-    <string name="repeat_monthly">每月</string>
-    <string name="repeat_yearly">每年</string>
-    <string name="repeat_weekly_short">每周</string>
-    <string name="repeat_monthly_short">每月</string>
-    <string name="repeat_yearly_short">每年</string>
-
     <!-- App 界面 -->
     <string name="title_settings">组件设置</string>
     <string name="tab_todo">待办</string>
-    <string name="tab_event">倒数日</string>
     <string name="action_add">添加</string>
     <string name="action_delete">删除</string>
     <string name="action_save">保存</string>
@@ -46,24 +22,30 @@
     <string name="todo_note_hint">备注（可选）</string>
     <string name="todo_empty_hint">还没有待办，点右下角添加</string>
 
-    <string name="event_title_hint">事件名称</string>
-    <string name="event_count_up">无重复且日期已过时显示为「已经 N 天」</string>
     <string name="detailed_deadline">显示具体时间</string>
-    <string name="detailed_deadline_summary">开启后显示准确日期和时分；关闭时保持剩余天数显示。</string>
+    <string name="detailed_deadline_summary">开启后保存准确日期和时分；列表与组件按“待办日期显示”设置展示。</string>
     <string name="deadline_time_not_set">选择具体时间</string>
     <string name="deadline_time_value">%1$s  %2$s</string>
     <string name="pick_deadline_time">选择具体时间</string>
-    <string name="event_empty_hint">还没有倒数日，点右下角添加</string>
 
     <!-- 设置项 -->
     <string name="pref_group_appearance">组件外观</string>
     <string name="pref_text_color">文字颜色</string>
     <string name="pref_glass_panel">玻璃底板</string>
-    <string name="pref_glass_panel_summary">垫一层半透明渐变，浅色壁纸下更清楚</string>
+    <string name="pref_glass_panel_summary">设置组件背景后，玻璃底板不会生效。</string>
     <string name="pref_group_todo">待办组件</string>
     <string name="pref_max_items">最多显示条数</string>
     <string name="pref_show_done">显示已完成项</string>
     <string name="pref_show_done_summary">关闭时，勾选完成后立即从组件消失</string>
+    <string name="pref_todo_date_display">待办日期显示</string>
+    <string name="pref_todo_date_ddl">DDL</string>
+    <string name="pref_todo_date_days">剩余天数</string>
+    <string name="pref_todo_date_both">都显示</string>
+    <string name="pref_todo_time_precision">具体时间精度</string>
+    <string name="pref_todo_time_none">不显示</string>
+    <string name="pref_todo_time_hour">到小时</string>
+    <string name="pref_todo_time_minute">到分钟</string>
+    <string name="pref_todo_time_precision_summary">仅对待办中已设置的具体时间生效。只显示剩余天数时，具体时间会附在天数后面。</string>
     <string name="pref_group_data">数据</string>
     <string name="pref_clear_done">清空所有已完成</string>
 
@@ -85,6 +67,6 @@
     <string name="color_channel_green">G</string>
     <string name="color_channel_blue">B</string>
     <string name="pref_widget_font_size">字体大小</string>
-    <string name="pref_widget_font_size_summary">同时调整倒数日和待办组件文字；大数字会根据组件尺寸自动适配。</string>
+    <string name="pref_widget_font_size_summary">调整待办组件文字</string>
     <string name="widget_font_size_value">%1$d%%</string>
 </resources>

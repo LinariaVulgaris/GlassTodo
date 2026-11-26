@@ -32,28 +32,10 @@
             android:parentActivityName=".ui.MainActivity" />
 
         <activity
-            android:name=".ui.glass.GlassSetupActivity"
+            android:name=".ui.background.WidgetBackgroundActivity"
             android:exported="false"
-            android:label="@string/glass_setup_title"
+            android:label="@string/background_setup_title"
             android:windowSoftInputMode="adjustResize" />
-
-        <activity
-            android:name=".ui.layout.WidgetLayoutActivity"
-            android:exported="false"
-            android:label="@string/widget_layout_title" />
-
-        <!-- ==================== 倒数日组件 ==================== -->
-        <receiver
-            android:name=".widget.countdown.CountdownWidgetProvider"
-            android:exported="true"
-            android:label="@string/widget_countdown_label">
-            <intent-filter>
-                <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />
-            </intent-filter>
-            <meta-data
-                android:name="android.appwidget.provider"
-                android:resource="@xml/widget_countdown_info" />
-        </receiver>
 
         <!-- ==================== 待办列表组件 ==================== -->
         <receiver
@@ -75,7 +57,7 @@
         -->
 
         <!-- ==================== 内部广播 ==================== -->
-        <!-- 处理组件上的点击动作：勾选待办、切换倒数日事件 -->
+        <!-- 处理组件上的点击动作：勾选待办 -->
         <receiver
             android:name=".widget.WidgetActionReceiver"
             android:exported="false" />

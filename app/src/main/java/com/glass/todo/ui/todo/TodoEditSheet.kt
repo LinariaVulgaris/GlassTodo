@@ -31,6 +31,7 @@ class TodoEditSheet : BottomSheetDialogFragment() {
     private var dueMinuteOfDay: Int? = null
     private var editingId: Long = NEW_ID
     private var writeJob: Job? = null
+    private var formLoaded = false
 
     override fun onCreateView(
         inflater: LayoutInflater,
@@ -55,6 +56,8 @@ class TodoEditSheet : BottomSheetDialogFragment() {
             ?.let { DateText.normalizeMinuteOfDay(it) }
         binding.switchDetailedDeadline.isChecked =
             savedInstanceState?.getBoolean(STATE_DETAILED, false) ?: false
+        formLoaded = editingId == NEW_ID || savedInstanceState?.getBoolean(STATE_FORM_LOADED, false) == true
+        setFormLoaded(formLoaded)
 
         binding.dueField.setOnClickListener { showDatePicker() }
         binding.dueClear.setOnClickListener {
@@ -83,27 +86,42 @@ class TodoEditSheet : BottomSheetDialogFragment() {
             binding.sheetTitle.setText(R.string.sheet_title_new_todo)
         } else {
             binding.sheetTitle.setText(R.string.sheet_title_edit_todo)
-            viewLifecycleOwner.lifecycleScope.launch {
-                val todo = withContext(Dispatchers.IO) { repo.todos.getByIdSync(editingId) }
-                if (todo == null) {
-                    dismissAllowingStateLoss()
-                } else {
-                    binding.todoTitleInput.setText(todo.title)
-                    binding.todoNoteInput.setText(todo.note)
-                    dueEpochDay = todo.dueEpochDay
-                    dueMinuteOfDay = todo.dueMinuteOfDay?.let { DateText.normalizeMinuteOfDay(it) }
-                    binding.switchDetailedDeadline.isChecked = dueMinuteOfDay != null
-                    renderDue()
+            if (!formLoaded) {
+                viewLifecycleOwner.lifecycleScope.launch {
+                    val todo = withContext(Dispatchers.IO) { repo.todos.getByIdSync(editingId) }
+                    if (todo == null) {
+                        dismissAllowingStateLoss()
+                    } else {
+                        binding.todoTitleInput.setText(todo.title)
+                        binding.todoNoteInput.setText(todo.note)
+                        dueEpochDay = todo.dueEpochDay
+                        dueMinuteOfDay = todo.dueMinuteOfDay?.let { DateText.normalizeMinuteOfDay(it) }
+                        binding.switchDetailedDeadline.isChecked = dueMinuteOfDay != null
+                        formLoaded = true
+                        setFormLoaded(true)
+                        renderDue()
+                    }
                 }
             }
         }
         renderDue()
     }
 
+    private fun setFormLoaded(loaded: Boolean) {
+        binding.sheetSave.isEnabled = loaded
+        binding.sheetDelete.isEnabled = loaded
+        binding.todoTitleInput.isEnabled = loaded
+        binding.todoNoteInput.isEnabled = loaded
+        binding.dueField.isEnabled = loaded
+        binding.dueClear.isEnabled = loaded
+        binding.switchDetailedDeadline.isEnabled = loaded
+        binding.deadlineTimeField.isEnabled = loaded
+    }
+
     private fun showDatePicker() {
         val initial = dueEpochDay
             ?.let { DateText.epochDayToUtcMillis(it) }
-            ?: MaterialDatePicker.todayInUtcMilliseconds()
+            ?: DateText.todayUtcMillis()
         val picker = MaterialDatePicker.Builder.datePicker()
             .setTitleText(R.string.pick_due_date)
             .setSelection(initial)
@@ -141,8 +159,8 @@ class TodoEditSheet : BottomSheetDialogFragment() {
     }
 
     private fun save(repo: Repository) {
-        // Room 的 suspend 写入会切到后台，期间按钮仍可点；不加这道门会重复插入。
-        if (writeJob?.isActive == true) return
+        // 已有记录尚未加载完时不能保存，否则会用空白表单覆盖数据库中的原内容。
+        if (!formLoaded || writeJob?.isActive == true) return
         val title = binding.todoTitleInput.text?.toString()?.trim().orEmpty()
         if (title.isEmpty()) {
             binding.todoTitleLayout.error = getString(R.string.error_title_empty)
@@ -193,7 +211,7 @@ class TodoEditSheet : BottomSheetDialogFragment() {
     }
 
     private fun delete(repo: Repository) {
-        if (editingId == NEW_ID || writeJob?.isActive == true) return
+        if (!formLoaded || editingId == NEW_ID || writeJob?.isActive == true) return
         val id = editingId
         writeJob = viewLifecycleOwner.lifecycleScope.launch {
             withContext(Dispatchers.IO) { repo.todos.getByIdSync(id) }?.let {
@@ -209,6 +227,7 @@ class TodoEditSheet : BottomSheetDialogFragment() {
         dueEpochDay?.let { outState.putLong(STATE_DUE, it) }
         dueMinuteOfDay?.let { outState.putInt(STATE_MINUTE, it) }
         outState.putBoolean(STATE_DETAILED, binding.switchDetailedDeadline.isChecked)
+        outState.putBoolean(STATE_FORM_LOADED, formLoaded)
     }
 
     override fun onDestroyView() {
@@ -221,6 +240,7 @@ class TodoEditSheet : BottomSheetDialogFragment() {
         private const val STATE_DUE = "state_due_epoch_day"
         private const val STATE_MINUTE = "state_due_minute_of_day"
         private const val STATE_DETAILED = "state_detailed_deadline"
+        private const val STATE_FORM_LOADED = "state_form_loaded"
         const val NEW_ID = -1L
 
         fun newInstance(id: Long = NEW_ID): TodoEditSheet = TodoEditSheet().apply {

@@ -41,36 +41,31 @@ class WidgetLayoutGeometryTest {
     }
 
     @Test
-    fun todoWideModeUsesGridAtTheWidgetsMinimumUsableWidth() {
-        assertEquals(2, WidgetLayoutGeometry.todoColumns(WidgetLayoutMode.WIDE, 240))
-        assertEquals(2, WidgetLayoutGeometry.todoColumns(WidgetLayoutMode.WIDE, 319))
-        assertEquals(1, WidgetLayoutGeometry.todoColumns(WidgetLayoutMode.WIDE, 239))
+    fun todoUsesCompactRowsOnlyWhenWidthIsLimited() {
+        WidgetLayoutMode.entries.forEach { mode ->
+            assertEquals(
+                WidgetLayoutGeometry.TodoLayout.COMPACT_LIST,
+                WidgetLayoutGeometry.todoLayout(mode, 259)
+            )
+            assertEquals(
+                WidgetLayoutGeometry.TodoLayout.COMFORT_LIST,
+                WidgetLayoutGeometry.todoLayout(mode, 280)
+            )
+        }
     }
 
     @Test
-    fun todoSquareModeStaysCompactUntilThereIsRoomForTwoColumns() {
-        assertEquals(WidgetLayoutGeometry.TodoLayout.COMPACT_LIST, WidgetLayoutGeometry.todoLayout(WidgetLayoutMode.SQUARE, 250))
-        assertEquals(WidgetLayoutGeometry.TodoLayout.GRID, WidgetLayoutGeometry.todoLayout(WidgetLayoutMode.SQUARE, 420))
+    fun todoStaysSingleColumnEvenOnVeryWideWidgets() {
+        assertEquals(1, WidgetLayoutGeometry.todoColumns(WidgetLayoutMode.WIDE, 240))
+        assertEquals(1, WidgetLayoutGeometry.todoColumns(WidgetLayoutMode.WIDE, 600))
+        assertEquals(1, WidgetLayoutGeometry.todoColumns(WidgetLayoutMode.SQUARE, 420))
+        assertEquals(1, WidgetLayoutGeometry.todoColumns(WidgetLayoutMode.AUTO, 0))
     }
 
     @Test
-    fun todoFixedPresetsProduceDistinctLayoutsOnANormalWidget() {
-        val width = 250
-        val layouts = listOf(
-            WidgetLayoutMode.WIDE,
-            WidgetLayoutMode.SQUARE,
-            WidgetLayoutMode.TALL
-        ).map { WidgetLayoutGeometry.todoLayout(it, width) }
-        assertEquals(3, layouts.distinct().size)
-        assertEquals(WidgetLayoutGeometry.TodoLayout.GRID, layouts[0])
-        assertEquals(WidgetLayoutGeometry.TodoLayout.COMPACT_LIST, layouts[1])
-        assertEquals(WidgetLayoutGeometry.TodoLayout.COMFORT_LIST, layouts[2])
-    }
-
-    @Test
-    fun todoAutoFallbackAndTallModeNeverProduceZeroColumns() {
-        assertEquals(1, WidgetLayoutGeometry.todoColumns(WidgetLayoutMode.AUTO, 600))
-        assertEquals(1, WidgetLayoutGeometry.todoColumns(WidgetLayoutMode.TALL, 600))
-        assertEquals(1, WidgetLayoutGeometry.todoColumns(WidgetLayoutMode.TALL, 0))
+    fun displayPixelBudgetUsesDpAndScreenDensity() {
+        assertEquals(135_000, WidgetLayoutGeometry.displayPixels(250, 180, 3f))
+        assertEquals(2, WidgetLayoutGeometry.displayPixels(0, 0, 2f))
+        assertEquals(Int.MAX_VALUE, WidgetLayoutGeometry.displayPixels(100_000, 100_000, 4f))
     }
 }

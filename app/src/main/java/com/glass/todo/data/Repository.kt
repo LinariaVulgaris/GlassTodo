@@ -1,6 +1,7 @@
 package com.glass.todo.data
 
 import android.content.Context
+import androidx.room.withTransaction
 
 /**
  * 极简依赖容器。
@@ -14,7 +15,11 @@ class Repository private constructor(context: Context) {
     val prefs = Prefs(context)
 
     val todos: TodoDao get() = db.todoDao()
-    val events: EventDao get() = db.eventDao()
+
+    /** 在一个事务里写完整组顺序，避免排序过程中 Room 发出半成品列表。 */
+    suspend fun reorderTodos(ids: List<Long>) = db.withTransaction {
+        ids.forEachIndexed { index, id -> todos.setSortOrder(id, index) }
+    }
 
     companion object {
         @Volatile

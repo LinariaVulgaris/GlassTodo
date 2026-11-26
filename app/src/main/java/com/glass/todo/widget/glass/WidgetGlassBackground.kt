@@ -19,12 +19,12 @@ object WidgetGlassBackground {
         val config = prefs.widgetGlassConfig(widgetId)
         val bitmap = if (config.isUsable) WidgetGlassStore.loadRendered(context, widgetId) else null
         if (bitmap != null) {
-            views.setViewVisibility(R.id.widget_glass, View.VISIBLE)
-            views.setImageViewBitmap(R.id.widget_glass, bitmap)
+            views.setViewVisibility(R.id.widget_background, View.VISIBLE)
+            views.setImageViewBitmap(R.id.widget_background, bitmap)
             // 液态玻璃图本身已经包含底板，避免再叠一层静态玻璃背景。
             views.setInt(android.R.id.background, "setBackgroundResource", android.R.color.transparent)
         } else {
-            views.setViewVisibility(R.id.widget_glass, View.GONE)
+            views.setViewVisibility(R.id.widget_background, View.GONE)
             views.setInt(
                 android.R.id.background,
                 "setBackgroundResource",

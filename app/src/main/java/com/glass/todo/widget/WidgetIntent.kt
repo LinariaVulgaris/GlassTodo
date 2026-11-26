@@ -21,7 +21,6 @@ import com.glass.todo.ui.MainActivity
 object WidgetIntent {
 
     const val ACTION_TOGGLE_TODO = "com.glass.todo.widget.action.TOGGLE_TODO"
-    const val ACTION_CYCLE_EVENT = "com.glass.todo.widget.action.CYCLE_EVENT"
     const val ACTION_OPEN_ADD = "com.glass.todo.widget.action.OPEN_ADD"
 
     const val EXTRA_TODO_ID = "extra_todo_id"
@@ -54,20 +53,6 @@ object WidgetIntent {
             widgetId * 100 + 11,
             intent,
             PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_MUTABLE
-        )
-    }
-
-    /** 倒数日组件上的「切换下一个事件」按钮 */
-    fun cycleEvent(context: Context, widgetId: Int): PendingIntent {
-        val intent = Intent(context, WidgetActionReceiver::class.java).apply {
-            action = ACTION_CYCLE_EVENT
-            putExtra(EXTRA_WIDGET_ID, widgetId)
-        }
-        return PendingIntent.getBroadcast(
-            context,
-            widgetId * 100 + 12,
-            intent,
-            PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
         )
     }
 

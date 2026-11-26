@@ -3,7 +3,7 @@
     Android 12+ 用这个文件精确控制备份内容，取代过去笼统的 allowBackup。
     minSdk 就是 31，所以只需要这一份规则，不必再配 fullBackupContent。
 
-    待办和倒数日都是用户手记的数据，换机时理应跟着走，因此云备份和设备迁移都放行；
+    待办是用户手记的数据，换机时理应跟着走，因此云备份和设备迁移都放行；
     但要排除 Room 的 -wal / -shm / -journal 临时文件——
     只恢复主库而带上旧的预写日志，可能让数据库回到不一致状态。
 -->
@@ -12,6 +12,7 @@
     <cloud-backup>
         <include domain="database" path="glass_todo.db" />
         <include domain="sharedpref" path="glass_todo_prefs.xml" />
+        <include domain="file" path="widget_backgrounds/" />
         <include domain="file" path="widget_glass/" />
         <exclude domain="database" path="glass_todo.db-wal" />
         <exclude domain="database" path="glass_todo.db-shm" />
@@ -21,6 +22,7 @@
     <device-transfer>
         <include domain="database" path="glass_todo.db" />
         <include domain="sharedpref" path="glass_todo_prefs.xml" />
+        <include domain="file" path="widget_backgrounds/" />
         <include domain="file" path="widget_glass/" />
         <exclude domain="database" path="glass_todo.db-wal" />
         <exclude domain="database" path="glass_todo.db-shm" />

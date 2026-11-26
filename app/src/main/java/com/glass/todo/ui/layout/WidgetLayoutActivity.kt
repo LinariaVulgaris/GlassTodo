@@ -125,21 +125,17 @@ class WidgetLayoutActivity : AppCompatActivity() {
         binding.layoutGroup.check(modeButtons.firstOrNull { it.second == preferred }?.first ?: R.id.btn_layout_auto)
         installModeListener()
         binding.previewLayout.bind(target, resolved)
-        val detail = if (target.kind == WidgetTarget.Kind.TODO) {
-            val todoLayout = WidgetLayoutGeometry.todoLayout(resolved, target.widthDp)
-            val style = when (todoLayout) {
-                WidgetLayoutGeometry.TodoLayout.GRID -> R.string.widget_layout_todo_grid_style
-                WidgetLayoutGeometry.TodoLayout.COMPACT_LIST -> R.string.widget_layout_todo_compact_style
-                WidgetLayoutGeometry.TodoLayout.COMFORT_LIST -> R.string.widget_layout_todo_comfort_style
-            }
-            getString(
-                R.string.widget_layout_todo_columns,
-                WidgetLayoutGeometry.todoColumns(resolved, target.widthDp),
-                getString(style)
-            )
-        } else {
-            getString(resolved.labelRes())
+        val todoLayout = WidgetLayoutGeometry.todoLayout(resolved, target.widthDp)
+        val style = when (todoLayout) {
+            WidgetLayoutGeometry.TodoLayout.GRID -> R.string.widget_layout_todo_grid_style
+            WidgetLayoutGeometry.TodoLayout.COMPACT_LIST -> R.string.widget_layout_todo_compact_style
+            WidgetLayoutGeometry.TodoLayout.COMFORT_LIST -> R.string.widget_layout_todo_comfort_style
         }
+        val detail = getString(
+            R.string.widget_layout_todo_columns,
+            WidgetLayoutGeometry.todoColumns(resolved, target.widthDp),
+            getString(style)
+        )
         binding.textLayoutSummary.text = if (preferred == WidgetLayoutMode.AUTO) {
             getString(R.string.widget_layout_summary_auto, detail)
         } else {
@@ -159,13 +155,6 @@ class WidgetLayoutActivity : AppCompatActivity() {
         binding.textLayoutSummary.text = ""
         binding.textNoWidgets.visibility = android.view.View.VISIBLE
         // 无组件时仍保留刷新按钮，用户添加组件后不必重进页面。
-    }
-
-    private fun WidgetLayoutMode.labelRes(): Int = when (this) {
-        WidgetLayoutMode.AUTO -> R.string.widget_layout_auto
-        WidgetLayoutMode.WIDE -> R.string.widget_layout_wide
-        WidgetLayoutMode.TALL -> R.string.widget_layout_tall
-        WidgetLayoutMode.SQUARE -> R.string.widget_layout_square
     }
 
     override fun onSaveInstanceState(outState: Bundle) {

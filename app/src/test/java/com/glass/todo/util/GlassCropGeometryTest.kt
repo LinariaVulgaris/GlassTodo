@@ -96,4 +96,19 @@ class GlassCropGeometryTest {
         assertTrue(adjusted.left >= image.left && adjusted.top >= image.top)
         assertTrue(adjusted.right <= image.right && adjusted.bottom <= image.bottom)
     }
+
+    @Test
+    fun lockedResizeCanGrowWhilePreservingAspect() {
+        val crop = GlassCropGeometry.Bounds(50f, 100f, 150f, 300f)
+        val resized = GlassCropGeometry.resize(
+            crop, image, GlassCropGeometry.TouchMode.BOTTOM_RIGHT,
+            200f, 400f, 0.5f, true, 40f
+        )
+        assertTrue(resized.width > crop.width)
+        assertTrue(resized.height > crop.height)
+        assertEquals(0.5f, resized.width / resized.height, 0.001f)
+        assertEquals(50f, resized.left, 0.001f)
+        assertEquals(100f, resized.top, 0.001f)
+        assertTrue(resized.right <= image.right && resized.bottom <= image.bottom)
+    }
 }

@@ -15,6 +15,9 @@ import java.util.Locale
 class WidgetColorPickerDialog(
     context: Context,
     initialColor: Int,
+    private val titleRes: Int = R.string.color_picker_title,
+    private val sampleTextRes: Int = R.string.color_picker_sample,
+    private val previewMode: PreviewMode = PreviewMode.BACKGROUND,
     private val onColorSelected: (Int) -> Unit
 ) {
 
@@ -23,6 +26,7 @@ class WidgetColorPickerDialog(
     private var syncing = false
 
     fun show() {
+        binding.textColorPreviewSample.setText(sampleTextRes)
         render(selectedColor, updateHex = true)
         binding.colorHex.filters = arrayOf(InputFilter.AllCaps(), InputFilter.LengthFilter(7))
 
@@ -48,7 +52,7 @@ class WidgetColorPickerDialog(
         }
 
         val builder = MaterialAlertDialogBuilder(binding.root.context)
-            .setTitle(R.string.color_picker_title)
+            .setTitle(titleRes)
             .setView(binding.root)
             .setNegativeButton(android.R.string.cancel, null)
             .setPositiveButton(android.R.string.ok, null)
@@ -80,10 +84,20 @@ class WidgetColorPickerDialog(
 
     private fun render(color: Int, updateHex: Boolean) {
         syncing = true
-        binding.colorPreview.backgroundTintList = ColorStateList.valueOf(color)
-        binding.textColorPreviewSample.setTextColor(
-            if (Color.luminance(color) > 0.45f) Color.BLACK else Color.WHITE
-        )
+        when (previewMode) {
+            PreviewMode.TEXT -> {
+                // 文字颜色模式直接展示用户选中的字色，不再把颜色填到示例框背景。
+                binding.colorPreview.backgroundTintList = null
+                binding.textColorPreviewSample.setTextColor(color)
+            }
+
+            PreviewMode.BACKGROUND -> {
+                binding.colorPreview.backgroundTintList = ColorStateList.valueOf(color)
+                binding.textColorPreviewSample.setTextColor(
+                    if (Color.luminance(color) > 0.45f) Color.BLACK else Color.WHITE
+                )
+            }
+        }
         val red = (color ushr 16) and 0xFF
         val green = (color ushr 8) and 0xFF
         val blue = color and 0xFF
@@ -106,4 +120,6 @@ class WidgetColorPickerDialog(
         val rgb = normalized.toLong(16)
         return Color.rgb(((rgb ushr 16) and 0xFF).toInt(), ((rgb ushr 8) and 0xFF).toInt(), (rgb and 0xFF).toInt())
     }
+
+    enum class PreviewMode { TEXT, BACKGROUND }
 }

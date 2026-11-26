@@ -67,9 +67,31 @@ class WallpaperCropView @JvmOverloads constructor(
         invalidate()
     }
 
-    fun setCrop(value: GlassCrop, notify: Boolean = false) {
+    fun setCrop(value: GlassCrop, notify: Boolean = false, constrainAspect: Boolean = false) {
         useDefaultCropWhenReady = false
-        crop = value.normalized()
+        val normalized = value.normalized()
+        crop = if (constrainAspect && image != null) {
+            val bitmap = image!!
+            val source = GlassCropGeometry.Bounds(
+                0f, 0f, bitmap.width.toFloat(), bitmap.height.toFloat()
+            )
+            val selected = GlassCropGeometry.Bounds(
+                normalized.left * bitmap.width,
+                normalized.top * bitmap.height,
+                normalized.right * bitmap.width,
+                normalized.bottom * bitmap.height
+            )
+            GlassCropGeometry.adjustAspect(selected, source, targetAspect).let {
+                GlassCrop(
+                    it.left / bitmap.width,
+                    it.top / bitmap.height,
+                    it.right / bitmap.width,
+                    it.bottom / bitmap.height
+                ).normalized()
+            }
+        } else {
+            normalized
+        }
         updateCropRect()
         if (notify) onCropChanged?.invoke(crop)
         invalidate()

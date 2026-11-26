@@ -2,6 +2,7 @@ package com.glass.todo.util
 
 import android.content.Context
 import com.glass.todo.R
+import com.glass.todo.data.TodoTimePrecision
 import java.time.Instant
 import java.time.LocalDate
 import java.time.LocalTime
@@ -35,6 +36,13 @@ object DateText {
     fun epochDayToUtcMillis(epochDay: Long): Long =
         LocalDate.ofEpochDay(epochDay).atStartOfDay(ZoneOffset.UTC).toInstant().toEpochMilli()
 
+    /**
+     * MaterialDatePicker 的默认选中值必须是“本地今天”对应的 UTC 零点。
+     * 直接使用 todayInUtcMilliseconds() 在 UTC 与本地日期不同时会把日期选错。
+     */
+    fun todayUtcMillis(today: LocalDate = LocalDate.now()): Long =
+        epochDayToUtcMillis(today.toEpochDay())
+
     fun utcMillisToEpochDay(millis: Long): Long =
         Instant.ofEpochMilli(millis).atZone(ZoneOffset.UTC).toLocalDate().toEpochDay()
 
@@ -61,6 +69,44 @@ object DateText {
     fun formatTime(minuteOfDay: Int): String {
         val minute = normalizeMinuteOfDay(minuteOfDay) ?: 0
         return timeFormatter.format(LocalTime.of(minute / 60, minute % 60))
+    }
+
+    /** 不显示时间、精确到小时或精确到分钟；没有设置具体时间时由调用方决定不追加时间。 */
+    fun formatTimeByPrecision(
+        minuteOfDay: Int,
+        precision: TodoTimePrecision,
+        compact: Boolean = false
+    ): String? {
+        val minute = normalizeMinuteOfDay(minuteOfDay) ?: return null
+        return when (precision) {
+            TodoTimePrecision.NONE -> null
+            TodoTimePrecision.HOUR -> {
+                val suffix = if (compact) "时" else " 时"
+                "${minute / 60}$suffix"
+            }
+            TodoTimePrecision.MINUTE -> formatTime(minute)
+        }
+    }
+
+    /** DDL 的日期部分始终是绝对日期，避免“今天/明天”掩盖具体截止日。 */
+    fun formatExactDate(epochDay: Long, from: LocalDate = LocalDate.now()): String {
+        val date = LocalDate.ofEpochDay(epochDay)
+        return if (date.year == from.year) {
+            shortFormatter.format(date)
+        } else {
+            longFormatter.format(date)
+        }
+    }
+
+    /** 双列网格使用更短的绝对日期，跨年时仍保留年份。 */
+    fun formatCompactDate(epochDay: Long, from: LocalDate = LocalDate.now()): String {
+        val date = LocalDate.ofEpochDay(epochDay)
+        val formatter = if (date.year == from.year) {
+            DateTimeFormatter.ofPattern("M/d")
+        } else {
+            DateTimeFormatter.ofPattern("yy/M/d")
+        }
+        return formatter.format(date)
     }
 
     /**

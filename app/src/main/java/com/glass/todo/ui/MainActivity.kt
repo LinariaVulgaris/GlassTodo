@@ -14,7 +14,6 @@ import androidx.core.view.WindowInsetsCompat
 import androidx.fragment.app.Fragment
 import com.glass.todo.R
 import com.glass.todo.databinding.ActivityMainBinding
-import com.glass.todo.ui.event.EventListFragment
 import com.glass.todo.ui.settings.SettingsActivity
 import com.glass.todo.ui.todo.TodoEditSheet
 import com.glass.todo.ui.todo.TodoListFragment
@@ -49,11 +48,6 @@ class MainActivity : AppCompatActivity() {
             when (item.itemId) {
                 R.id.nav_todo -> {
                     switchTo(TAG_TODO) { TodoListFragment() }
-                    true
-                }
-
-                R.id.nav_event -> {
-                    switchTo(TAG_EVENT) { EventListFragment() }
                     true
                 }
 
@@ -132,12 +126,10 @@ class MainActivity : AppCompatActivity() {
 
     private fun refreshVisibleDates() {
         (supportFragmentManager.findFragmentByTag(TAG_TODO) as? TodoListFragment)?.refreshDates()
-        (supportFragmentManager.findFragmentByTag(TAG_EVENT) as? EventListFragment)?.refreshDates()
     }
 
     private companion object {
         const val TAG_TODO = "tab_todo"
-        const val TAG_EVENT = "tab_event"
         const val TAG_EDIT_SHEET = "todo_edit_sheet"
     }
 }

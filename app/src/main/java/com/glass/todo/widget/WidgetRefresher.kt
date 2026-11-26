@@ -4,7 +4,6 @@ import android.appwidget.AppWidgetManager
 import android.content.ComponentName
 import android.content.Context
 import android.util.Log
-import com.glass.todo.widget.countdown.CountdownWidgetProvider
 import com.glass.todo.widget.todo.TodoWidgetProvider
 import java.util.concurrent.Executors
 
@@ -32,23 +31,62 @@ object WidgetRefresher {
      */
     private val refreshLock = Any()
 
+    /** 合并刷新等待期内的重复请求，避免系统更新、缩放和 UI 修改把队列塞满。 */
+    private val callbackLock = Any()
+    private var refreshPending = false
+    private var refreshAgain = false
+    private val callbacks = mutableListOf<() -> Unit>()
+
     /**
      * 异步刷新全部组件。UI 侧改完数据后调用这个即可。
+     * 等待中的请求直接合并；刷新执行中的请求最多触发一次跟进刷新，
+     * 避免请求恰好在数据库快照读取后到达而导致桌面保留旧数据。
      *
      * @param onFinished 在后台线程回调；Receiver 应在此调用 PendingResult.finish()
      */
     @JvmOverloads
     fun refreshAll(context: Context, onFinished: (() -> Unit)? = null) {
         val app = context.applicationContext
-        executor.execute {
-            refreshAllBlocking(app)
-            if (onFinished != null) {
+        synchronized(callbackLock) {
+            onFinished?.let(callbacks::add)
+            if (refreshPending) {
+                refreshAgain = true
+                return
+            }
+            refreshPending = true
+            refreshAgain = false
+        }
+        executor.execute { drainRefreshRequests(app) }
+    }
+
+    private fun drainRefreshRequests(app: Context) {
+        while (true) {
+            val currentCallbacks = synchronized(callbackLock) {
+                callbacks.toList().also { callbacks.clear() }
+            }
+            try {
+                refreshAllBlocking(app)
+            } catch (t: Throwable) {
+                Log.e(TAG, "刷新组件失败", t)
+            }
+            currentCallbacks.forEach { callback ->
                 try {
-                    onFinished.invoke()
+                    callback.invoke()
                 } catch (t: Throwable) {
                     Log.e(TAG, "刷新回调失败", t)
                 }
             }
+
+            val shouldRunAgain = synchronized(callbackLock) {
+                if (refreshAgain) {
+                    refreshAgain = false
+                    true
+                } else {
+                    refreshPending = false
+                    false
+                }
+            }
+            if (!shouldRunAgain) return
         }
     }
 
@@ -60,9 +98,6 @@ object WidgetRefresher {
         val app = context.applicationContext
         val awm = app.getSystemService(AppWidgetManager::class.java) ?: return@synchronized
         try {
-            if (hasWidgets(awm, app, CountdownWidgetProvider::class.java)) {
-                CountdownWidgetProvider.updateAllBlocking(app, awm)
-            }
             if (hasWidgets(awm, app, TodoWidgetProvider::class.java)) {
                 TodoWidgetProvider.updateAllBlocking(app, awm)
             }

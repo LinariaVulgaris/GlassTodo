@@ -70,6 +70,90 @@ class AppDatabaseMigrationTest {
         db.close()
     }
 
+    @Test
+    fun migrate3To4DropsCountdownDataAndPreservesTodos() {
+        helper.createDatabase(TEST_DB, 3).use { db ->
+            db.execSQL(
+                """
+                INSERT INTO todos
+                    (id, title, note, dueEpochDay, dueMinuteOfDay, done, sortOrder, createdAt)
+                VALUES (1, '保留待办', '备注', 20000, 485, 0, 7, 100)
+                """.trimIndent()
+            )
+            db.execSQL(
+                """
+                INSERT INTO events
+                    (id, title, targetEpochDay, targetMinuteOfDay, repeat, countUpWhenPast,
+                     archived, sortOrder, createdAt)
+                VALUES (2, '删除倒数日', 20001, 540, 'none', 1, 0, 0, 101)
+                """.trimIndent()
+            )
+        }
+
+        val db = helper.runMigrationsAndValidate(
+            TEST_DB,
+            4,
+            true,
+            AppDatabase.MIGRATION_3_4
+        )
+        db.query(
+            "SELECT title, dueEpochDay, dueMinuteOfDay, sortOrder FROM todos WHERE id = 1"
+        ).use { cursor ->
+            assertTrue(cursor.moveToFirst())
+            assertEquals("保留待办", cursor.getString(0))
+            assertEquals(20000L, cursor.getLong(1))
+            assertEquals(485, cursor.getInt(2))
+            assertEquals(7, cursor.getInt(3))
+        }
+        db.query(
+            "SELECT COUNT(*) FROM sqlite_master WHERE type = 'table' AND name = 'events'"
+        ).use { cursor ->
+            assertTrue(cursor.moveToFirst())
+            assertEquals(0, cursor.getInt(0))
+        }
+        db.close()
+    }
+
+    @Test
+    fun migrate1To4UsesFullPathAndKeepsOnlyTodoData() {
+        helper.createDatabase(TEST_DB, 1).use { db ->
+            db.execSQL(
+                """
+                INSERT INTO todos (id, title, note, dueEpochDay, done, sortOrder, createdAt)
+                VALUES (1, '旧版待办', '', 20000, 0, 0, 100)
+                """.trimIndent()
+            )
+            db.execSQL(
+                """
+                INSERT INTO events
+                    (id, title, targetEpochDay, repeat, countUpWhenPast, archived, sortOrder, createdAt)
+                VALUES (2, '旧版倒数日', 20001, 'none', 1, 0, 0, 101)
+                """.trimIndent()
+            )
+        }
+
+        val db = helper.runMigrationsAndValidate(
+            TEST_DB,
+            4,
+            true,
+            AppDatabase.MIGRATION_1_2,
+            AppDatabase.MIGRATION_2_3,
+            AppDatabase.MIGRATION_3_4
+        )
+        db.query("SELECT title, dueMinuteOfDay FROM todos WHERE id = 1").use { cursor ->
+            assertTrue(cursor.moveToFirst())
+            assertEquals("旧版待办", cursor.getString(0))
+            assertTrue(cursor.isNull(1))
+        }
+        db.query(
+            "SELECT COUNT(*) FROM sqlite_master WHERE type = 'table' AND name = 'events'"
+        ).use { cursor ->
+            assertTrue(cursor.moveToFirst())
+            assertEquals(0, cursor.getInt(0))
+        }
+        db.close()
+    }
+
     private companion object {
         const val TEST_DB = "migration-test.db"
     }

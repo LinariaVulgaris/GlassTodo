@@ -1,7 +1,6 @@
 package com.glass.todo.ui.settings
 
 import android.content.Intent
-import android.content.res.ColorStateList
 import android.os.Bundle
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.content.ContextCompat
@@ -12,9 +11,10 @@ import androidx.lifecycle.lifecycleScope
 import com.glass.todo.R
 import com.glass.todo.data.Prefs
 import com.glass.todo.data.Repository
+import com.glass.todo.data.TodoDateDisplayMode
+import com.glass.todo.data.TodoTimePrecision
 import com.glass.todo.databinding.ActivitySettingsBinding
-import com.glass.todo.ui.glass.GlassSetupActivity
-import com.glass.todo.ui.layout.WidgetLayoutActivity
+import com.glass.todo.ui.background.WidgetBackgroundActivity
 import com.glass.todo.widget.WidgetRefresher
 import com.google.android.material.snackbar.Snackbar
 import com.google.android.material.slider.Slider
@@ -32,6 +32,8 @@ class SettingsActivity : AppCompatActivity() {
     private lateinit var repo: Repository
     private lateinit var prefs: Prefs
     private var applyingColorSelection = false
+    private var applyingTodoDateSelection = false
+    private var applyingTodoTimeSelection = false
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -55,10 +57,10 @@ class SettingsActivity : AppCompatActivity() {
         bindTextColor()
         bindWidgetFontSize()
         bindGlassPanel()
-        bindLiquidGlass()
-        bindWidgetLayout()
+        bindWidgetBackground()
         bindMaxItems()
         bindShowDone()
+        bindTodoDateDisplay()
         bindClearDone()
         bindProjectLink()
     }
@@ -89,7 +91,11 @@ class SettingsActivity : AppCompatActivity() {
             refreshWidgets()
         }
         binding.btnColorCustom.setOnClickListener {
-            WidgetColorPickerDialog(this, prefs.widgetCustomTextColor) { color ->
+            WidgetColorPickerDialog(
+                this,
+                prefs.widgetCustomTextColor,
+                previewMode = WidgetColorPickerDialog.PreviewMode.TEXT
+            ) { color ->
                 prefs.widgetCustomTextColor = color
                 prefs.widgetTextColor = color
                 renderTextColorSelection()
@@ -112,7 +118,6 @@ class SettingsActivity : AppCompatActivity() {
             label,
             current and 0xFFFFFF
         )
-        binding.btnColorCustom.iconTint = ColorStateList.valueOf(prefs.widgetCustomTextColor)
     }
 
     private fun bindWidgetFontSize() {
@@ -149,15 +154,9 @@ class SettingsActivity : AppCompatActivity() {
         }
     }
 
-    private fun bindLiquidGlass() {
-        binding.btnLiquidGlass.setOnClickListener {
-            startActivity(Intent(this, GlassSetupActivity::class.java))
-        }
-    }
-
-    private fun bindWidgetLayout() {
-        binding.btnWidgetLayout.setOnClickListener {
-            startActivity(Intent(this, WidgetLayoutActivity::class.java))
+    private fun bindWidgetBackground() {
+        binding.btnWidgetBackground.setOnClickListener {
+            startActivity(Intent(this, WidgetBackgroundActivity::class.java))
         }
     }
 
@@ -189,6 +188,46 @@ class SettingsActivity : AppCompatActivity() {
         binding.switchShowDone.isChecked = prefs.showDoneInWidget
         binding.switchShowDone.setOnCheckedChangeListener { _, checked ->
             prefs.showDoneInWidget = checked
+            refreshWidgets()
+        }
+    }
+
+    private fun bindTodoDateDisplay() {
+        applyingTodoDateSelection = true
+        binding.todoDateModeGroup.check(
+            when (prefs.todoDateDisplayMode) {
+                TodoDateDisplayMode.DDL -> R.id.btn_todo_date_ddl
+                TodoDateDisplayMode.DAYS -> R.id.btn_todo_date_days
+                TodoDateDisplayMode.BOTH -> R.id.btn_todo_date_both
+            }
+        )
+        applyingTodoDateSelection = false
+        binding.todoDateModeGroup.addOnButtonCheckedListener { _, checkedId, isChecked ->
+            if (applyingTodoDateSelection || !isChecked) return@addOnButtonCheckedListener
+            prefs.todoDateDisplayMode = when (checkedId) {
+                R.id.btn_todo_date_ddl -> TodoDateDisplayMode.DDL
+                R.id.btn_todo_date_days -> TodoDateDisplayMode.DAYS
+                else -> TodoDateDisplayMode.BOTH
+            }
+            refreshWidgets()
+        }
+
+        applyingTodoTimeSelection = true
+        binding.todoTimePrecisionGroup.check(
+            when (prefs.todoTimePrecision) {
+                TodoTimePrecision.NONE -> R.id.btn_todo_time_none
+                TodoTimePrecision.HOUR -> R.id.btn_todo_time_hour
+                TodoTimePrecision.MINUTE -> R.id.btn_todo_time_minute
+            }
+        )
+        applyingTodoTimeSelection = false
+        binding.todoTimePrecisionGroup.addOnButtonCheckedListener { _, checkedId, isChecked ->
+            if (applyingTodoTimeSelection || !isChecked) return@addOnButtonCheckedListener
+            prefs.todoTimePrecision = when (checkedId) {
+                R.id.btn_todo_time_none -> TodoTimePrecision.NONE
+                R.id.btn_todo_time_hour -> TodoTimePrecision.HOUR
+                else -> TodoTimePrecision.MINUTE
+            }
             refreshWidgets()
         }
     }

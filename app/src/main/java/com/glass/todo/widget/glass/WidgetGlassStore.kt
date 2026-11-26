@@ -96,16 +96,51 @@ object WidgetGlassStore {
         return bitmap
     }
 
-    /** 把编辑中的截图提交为正式源图，替换旧图前先完整写入。 */
-    fun commitPendingSource(context: Context, widgetId: Int) {
-        val pending = pendingSourceFile(context, widgetId)
-        if (!pending.isFile) return
-        val target = sourceFile(context, widgetId)
-        Files.move(
-            pending.toPath(),
-            target.toPath(),
-            StandardCopyOption.REPLACE_EXISTING
-        )
+    /**
+     * 提交编辑中的截图和渲染图。任一步写入失败时恢复旧源图、旧渲染图和 pending 图，
+     * 避免 SharedPreferences 尚未更新但旧背景已经被替换。
+     */
+    fun commitPendingSource(context: Context, widgetId: Int, rendered: Bitmap) {
+        val app = context.applicationContext
+        val pending = pendingSourceFile(app, widgetId)
+        if (!pending.isFile) {
+            saveRendered(app, widgetId, rendered)
+            return
+        }
+
+        val target = sourceFile(app, widgetId)
+        val renderedTarget = renderedFile(app, widgetId)
+        val sourceBackup = File(target.parentFile, target.name + ".backup")
+        val renderedBackup = File(renderedTarget.parentFile, renderedTarget.name + ".backup")
+        val hadSource = target.isFile
+        val hadRendered = renderedTarget.isFile
+
+        try {
+            if (hadSource) Files.copy(target.toPath(), sourceBackup.toPath(), StandardCopyOption.REPLACE_EXISTING)
+            if (hadRendered) Files.copy(renderedTarget.toPath(), renderedBackup.toPath(), StandardCopyOption.REPLACE_EXISTING)
+            Files.move(pending.toPath(), target.toPath(), StandardCopyOption.REPLACE_EXISTING)
+            saveRendered(app, widgetId, rendered)
+            pending.delete()
+        } catch (t: Throwable) {
+            // move 已消耗 pending 时先恢复它，保证用户还能直接重试。
+            if (!pending.isFile && target.isFile) {
+                Files.copy(target.toPath(), pending.toPath(), StandardCopyOption.REPLACE_EXISTING)
+            }
+            if (hadSource) {
+                Files.move(sourceBackup.toPath(), target.toPath(), StandardCopyOption.REPLACE_EXISTING)
+            } else {
+                target.delete()
+            }
+            if (hadRendered) {
+                Files.move(renderedBackup.toPath(), renderedTarget.toPath(), StandardCopyOption.REPLACE_EXISTING)
+            } else {
+                renderedTarget.delete()
+            }
+            throw t
+        } finally {
+            sourceBackup.delete()
+            renderedBackup.delete()
+        }
     }
 
     fun discardPendingSource(context: Context, widgetId: Int) {
@@ -132,11 +167,16 @@ object WidgetGlassStore {
     ): File {
         target.parentFile?.mkdirs()
         val temp = File(target.parentFile, target.name + ".tmp")
-        FileOutputStream(temp).use { out ->
-            check(bitmap.compress(format, quality, out)) { "无法保存液态玻璃图片" }
-            out.flush()
+        try {
+            FileOutputStream(temp).use { out ->
+                check(bitmap.compress(format, quality, out)) { "无法保存液态玻璃图片" }
+                out.flush()
+            }
+            Files.move(temp.toPath(), target.toPath(), StandardCopyOption.REPLACE_EXISTING)
+        } catch (t: Throwable) {
+            temp.delete()
+            throw t
         }
-        Files.move(temp.toPath(), target.toPath(), StandardCopyOption.REPLACE_EXISTING)
         return target
     }
 }

@@ -8,8 +8,7 @@ object WidgetLayoutGeometry {
 
     private const val WIDE_RATIO = 1.35f
     private const val TALL_RATIO = 0.75f
-    private const val GRID_MIN_WIDTH = 240
-    private const val SQUARE_GRID_MIN_WIDTH = 420
+    private const val COMFORT_LIST_MIN_WIDTH = 280
 
     /** 用户显式选择时始终尊重预设；自动模式才按当前桌面比例分类。 */
     fun resolve(
@@ -28,22 +27,11 @@ object WidgetLayoutGeometry {
         }
     }
 
-    /**
-     * 待办布局不只由列数决定：窄组件下竖向与方形也使用不同的行字号和密度，
-     * 避免四个预设最终都渲染成同一种单列列表。
-     */
-    fun todoLayout(mode: WidgetLayoutMode, widthDp: Int): TodoLayout {
-        val width = widthDp.coerceAtLeast(1)
-        return when (mode) {
-            WidgetLayoutMode.WIDE -> if (width >= GRID_MIN_WIDTH) TodoLayout.GRID else TodoLayout.COMPACT_LIST
-            WidgetLayoutMode.SQUARE -> if (width >= SQUARE_GRID_MIN_WIDTH) TodoLayout.GRID else TodoLayout.COMPACT_LIST
-            WidgetLayoutMode.TALL -> TodoLayout.COMFORT_LIST
-            // AUTO 必须先由调用方结合桌面宽高解析，无法仅凭宽度判断时采用紧凑单列。
-            WidgetLayoutMode.AUTO -> TodoLayout.COMPACT_LIST
-        }
-    }
+    /** 窄组件把日期元数据放到标题下方，宽组件保持原来的左右排列。 */
+    fun todoLayout(mode: WidgetLayoutMode, widthDp: Int): TodoLayout =
+        if (widthDp >= COMFORT_LIST_MIN_WIDTH) TodoLayout.COMFORT_LIST else TodoLayout.COMPACT_LIST
 
-    /** 保留列数查询，布局设置页和组件 Provider 共用同一套判定。 */
+    /** 待办始终只有一列；保留该查询供旧布局预览代码兼容使用。 */
     fun todoColumns(mode: WidgetLayoutMode, widthDp: Int): Int =
         todoLayout(mode, widthDp).columns
 
@@ -54,5 +42,15 @@ object WidgetLayoutGeometry {
     }
 
     fun aspectRatio(widthDp: Int, heightDp: Int): Float =
-        max(1, widthDp).toFloat() / max(1, heightDp).toFloat()
+        max(1, widthDp).toFloat() / max(1, heightDp)
+
+    /** 当前组件在屏幕上的实际像素数，用于在 Binder 预算内选择合适的背景分辨率。 */
+    fun displayPixels(widthDp: Int, heightDp: Int, density: Float): Int {
+        require(density.isFinite() && density > 0f)
+        val width = max(1, widthDp).toLong()
+        val height = max(1, heightDp).toLong()
+        return (width * height * density.toDouble())            .coerceAtMost(Int.MAX_VALUE.toDouble())
+            .toInt()
+            .coerceAtLeast(1)
+    }
 }

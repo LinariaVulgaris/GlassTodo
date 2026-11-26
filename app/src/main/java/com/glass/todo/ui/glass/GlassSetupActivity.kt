@@ -254,8 +254,7 @@ class GlassSetupActivity : AppCompatActivity() {
                     }
                     try {
                         withContext(Dispatchers.IO) {
-                            WidgetGlassStore.commitPendingSource(app, target.id)
-                            WidgetGlassStore.saveRendered(app, target.id, rendered)
+                            WidgetGlassStore.commitPendingSource(app, target.id, rendered)
                         }
                         oldConfig.copy(
                             enabled = true,
@@ -372,7 +371,7 @@ class GlassSetupActivity : AppCompatActivity() {
 
     override fun onDestroy() {
         operationJob?.cancel()
-        // 渲染协程取消不会立即中断 CPU 像素循环，位图交给 GC 回收，避免旋转屏幕时提前 recycle。
+        // 渲染器会在像素行与模糊阶段检查取消；不再使用的源图交给 GC 回收。
         super.onDestroy()
     }
 

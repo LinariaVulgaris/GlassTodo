@@ -17,6 +17,16 @@ class DateTextTest {
     }
 
     @Test
+    fun `picker default uses the supplied local today at UTC midnight`() {
+        val localToday = LocalDate.of(2026, 11, 25)
+
+        assertEquals(
+            Instant.parse("2026-11-25T00:00:00Z").toEpochMilli(),
+            DateText.todayUtcMillis(localToday)
+        )
+    }
+
+    @Test
     fun `picker UTC midnight is not shifted by a negative local timezone`() {
         val original = java.util.TimeZone.getDefault()
         try {

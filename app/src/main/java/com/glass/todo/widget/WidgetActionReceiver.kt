@@ -1,12 +1,10 @@
 package com.glass.todo.widget
 
-import android.appwidget.AppWidgetManager
 import android.content.BroadcastReceiver
 import android.content.Context
 import android.content.Intent
 import android.util.Log
 import com.glass.todo.data.Repository
-import com.glass.todo.widget.countdown.CountdownWidgetProvider
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
@@ -14,7 +12,7 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 
 /**
- * 处理组件上的点击动作：勾选待办、切换倒数日事件。
+ * 处理组件上的点击动作：勾选待办。
  *
  * 这些动作都要写数据库，而 BroadcastReceiver 不能阻塞主线程，
  * 所以统一用 goAsync() + IO 协程：先在协程里改数据，再刷新组件，最后 finish()。
@@ -22,9 +20,8 @@ import kotlinx.coroutines.withContext
 class WidgetActionReceiver : BroadcastReceiver() {
 
     override fun onReceive(context: Context, intent: Intent) {
-        when (intent.action) {
-            WidgetIntent.ACTION_TOGGLE_TODO -> handleToggle(context, intent)
-            WidgetIntent.ACTION_CYCLE_EVENT -> handleCycleEvent(context, intent)
+        if (intent.action == WidgetIntent.ACTION_TOGGLE_TODO) {
+            handleToggle(context, intent)
         }
     }
 
@@ -50,28 +47,6 @@ class WidgetActionReceiver : BroadcastReceiver() {
                 }
             } catch (t: Throwable) {
                 Log.e(TAG, "切换待办状态失败", t)
-            } finally {
-                pending.finish()
-            }
-        }
-    }
-
-    private fun handleCycleEvent(context: Context, intent: Intent) {
-        val widgetId = intent.getIntExtra(
-            WidgetIntent.EXTRA_WIDGET_ID,
-            AppWidgetManager.INVALID_APPWIDGET_ID
-        )
-        if (widgetId == AppWidgetManager.INVALID_APPWIDGET_ID) return
-        val app = context.applicationContext
-        val pending = goAsync()
-        scope.launch {
-            try {
-                withContext(Dispatchers.IO) {
-                    CountdownWidgetProvider.cycleToNextEvent(app, widgetId)
-                    WidgetRefresher.refreshAllBlocking(app)
-                }
-            } catch (t: Throwable) {
-                Log.e(TAG, "切换倒数日事件失败", t)
             } finally {
                 pending.finish()
             }

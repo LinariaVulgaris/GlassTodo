@@ -7,33 +7,64 @@
 
     <string name="sheet_title_new_todo">新建待办</string>
     <string name="sheet_title_edit_todo">编辑待办</string>
-    <string name="sheet_title_new_event">新建倒数日</string>
-    <string name="sheet_title_edit_event">编辑倒数日</string>
 
     <string name="due_label">截止日</string>
     <string name="due_none">不设截止日</string>
-    <string name="event_target_label">目标日期</string>
-    <string name="date_not_set">请选择日期</string>
     <string name="pick_due_date">选择截止日</string>
-    <string name="pick_event_date">选择目标日期</string>
 
     <string name="date_today">今天</string>
     <string name="date_tomorrow">明天</string>
     <string name="date_yesterday">昨天</string>
 
-    <string name="repeat_label">重复</string>
-
     <string name="error_title_empty">请填写标题</string>
     <string name="error_date_empty">请选择日期</string>
 
-    <string name="settings_intro">桌面组件是透明背景直接叠在壁纸上的，文字默认纯白。如果壁纸偏亮看不清，可以打开下面的玻璃底板，或换一个文字颜色。</string>
     <string name="max_items_value">%1$d 条</string>
     <string name="clear_done_done">已清空所有已完成项</string>
 
-    <!-- 液态玻璃背景 -->
-    <string name="glass_feature_title">液态玻璃（截图校准）</string>
-    <string name="glass_feature_summary">导入桌面截图并让选框对齐组件，可生成带模糊、折射和高光的静态背景。</string>
-    <string name="glass_feature_action">配置液态玻璃背景</string>
+    <!-- 组件背景 -->
+    <string name="background_feature_title">背景</string>
+    <string name="background_feature_summary">为每个桌面组件上传图片或设置纯色块背景。</string>
+    <string name="background_feature_action">设置组件背景</string>
+    <string name="background_setup_title">组件背景</string>
+    <string name="background_setup_intro">先选择要设置的桌面组件，并确认它在桌面上的当前大小，再上传图片或选择纯色。每个组件互不影响。</string>
+    <string name="background_target_label">设置组件</string>
+    <string name="background_select_widget">选择组件</string>
+    <string name="background_target_choose_title">选择要设置的组件</string>
+    <string name="background_no_widgets">桌面上还没有 GlassTodo 组件，请先添加后再回来。</string>
+    <string name="background_need_widget">请先选择一个组件</string>
+    <string name="background_current_size">当前桌面尺寸：%1$d × %2$d dp · 宽高比 %3$.2f</string>
+    <string name="background_size_hint">请先回到桌面长按组件，拖动边框调整到满意大小，再返回这里确认。裁剪框会按确认后的组件比例生成。</string>
+    <string name="background_refresh_size">重新读取桌面尺寸</string>
+    <string name="background_size_refreshed">已重新读取桌面尺寸</string>
+    <string name="background_confirm_size_title">确认当前组件大小</string>
+    <string name="background_confirm_size_message">当前组件为 %1$d × %2$d dp。请确认这就是你准备使用的桌面尺寸；确认后将按这个比例生成图片裁剪框。</string>
+    <string name="background_adjust_on_desktop">返回桌面调整</string>
+    <string name="background_confirm_and_choose">确认并选择图片</string>
+    <string name="background_size_changed">组件尺寸已变化，请重新确认大小后再选择图片</string>
+    <string name="background_type_label">背景类型</string>
+    <string name="background_type_none">默认</string>
+    <string name="background_type_image">图片</string>
+    <string name="background_type_color">纯色</string>
+    <string name="background_upload_image">上传图片</string>
+    <string name="background_need_image">请先上传一张图片</string>
+    <string name="background_crop_hint">拖动选框改变位置，拖动四角调整大小；比例始终保持与当前组件一致</string>
+    <string name="background_preview">预览组件最终效果</string>
+    <string name="background_static_hint">预览会带上实际待办文字。图片只做裁切，不添加模糊或玻璃效果；组件尺寸改变后裁剪比例会自动更新。</string>
+    <string name="background_color_preview">纯色背景预览</string>
+    <string name="background_color_value">当前颜色：#%1$06X</string>
+    <string name="background_pick_color">选择纯色颜色</string>
+    <string name="background_color_picker_title">选择背景颜色</string>
+    <string name="background_color_picker_sample">背景 Aa 123</string>
+    <string name="background_restore_default">恢复默认</string>
+    <string name="background_clear_confirm">恢复默认背景并删除该组件已上传的图片？</string>
+    <string name="background_save">应用背景</string>
+    <string name="background_saved">已应用组件背景</string>
+    <string name="background_cleared">已恢复默认背景</string>
+    <string name="background_import_failed">无法读取这张图片，请换一张</string>
+    <string name="background_render_failed">背景生成失败，请重试</string>
+
+    <!-- 旧版液态玻璃页面保留源码兼容，设置入口已移除 -->
     <string name="glass_setup_title">液态玻璃背景</string>
     <string name="glass_setup_intro">先在桌面放好组件并截一张图，再导入截图，让选框与组件边框重合。已有组件内容也会进入背景，尽量选择只露出壁纸的区域。</string>
     <string name="glass_target_label">配置组件</string>
@@ -83,7 +114,4 @@
     <string name="widget_layout_no_widgets">桌面上还没有 GlassTodo 组件，请先添加后再回来。</string>
     <string name="widget_layout_applied">布局已应用，桌面组件正在更新</string>
     <string name="widget_layout_size_refreshed">已重新读取桌面尺寸</string>
-    <string name="widget_layout_settings_title">组件尺寸与形状</string>
-    <string name="widget_layout_settings_summary">查看真实桌面尺寸，选择自动、横向、竖向或方形排版。</string>
-    <string name="widget_layout_settings_action">设置尺寸与形状</string>
 </resources>

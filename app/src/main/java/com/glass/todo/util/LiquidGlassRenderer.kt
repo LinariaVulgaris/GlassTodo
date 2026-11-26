@@ -3,6 +3,8 @@ package com.glass.todo.util
 import android.graphics.Bitmap
 import com.glass.todo.data.GlassCrop
 import com.glass.todo.data.PixelCrop
+import kotlinx.coroutines.currentCoroutineContext
+import kotlinx.coroutines.ensureActive
 import kotlin.math.ceil
 import kotlin.math.exp
 import kotlin.math.hypot
@@ -19,12 +21,13 @@ import kotlin.math.roundToInt
  */
 object LiquidGlassRenderer {
 
-    fun render(
+    suspend fun render(
         source: Bitmap,
         crop: GlassCrop,
         strength: Float,
         maxOutputPixels: Int = GlassRenderGeometry.MAX_OUTPUT_PIXELS
     ): Bitmap {
+        currentCoroutineContext().ensureActive()
         require(!source.isRecycled)
         val pixelCrop = crop.normalized().toPixels(source.width, source.height)
         val outputSize = GlassRenderGeometry.outputSize(pixelCrop, maxOutputPixels)
@@ -56,7 +59,12 @@ object LiquidGlassRenderer {
             sampleCrop.width,
             sampleCrop.height
         )
-        val padded = Bitmap.createScaledBitmap(sampled, paddedWidth, paddedHeight, true)
+        val padded = try {
+            Bitmap.createScaledBitmap(sampled, paddedWidth, paddedHeight, true)
+        } catch (t: Throwable) {
+            sampled.recycle()
+            throw t
+        }
         if (padded !== sampled) sampled.recycle()
 
         return try {
@@ -67,7 +75,9 @@ object LiquidGlassRenderer {
                 (outputMin * (0.012f + 0.05f * amount)).roundToInt()
             )
             repeat(3) {
+                currentCoroutineContext().ensureActive()
                 boxBlurHorizontal(pixels, paddedWidth, paddedHeight, blurRadius)
+                currentCoroutineContext().ensureActive()
                 boxBlurVertical(pixels, paddedWidth, paddedHeight, blurRadius)
             }
 
@@ -80,6 +90,7 @@ object LiquidGlassRenderer {
             val whiteAlpha = 0.025f + 0.05f * amount
 
             for (y in 0 until outputSize.height) {
+                currentCoroutineContext().ensureActive()
                 for (x in 0 until outputSize.width) {
                     val px = x + 0.5f
                     val py = y + 0.5f
@@ -177,10 +188,11 @@ object LiquidGlassRenderer {
         }
     }
 
-    private fun boxBlurHorizontal(pixels: IntArray, width: Int, height: Int, radius: Int) {
+    private suspend fun boxBlurHorizontal(pixels: IntArray, width: Int, height: Int, radius: Int) {
         val temp = IntArray(pixels.size)
         val diameter = radius * 2 + 1
         for (y in 0 until height) {
+            currentCoroutineContext().ensureActive()
             val row = y * width
             var red = 0
             var green = 0
@@ -207,10 +219,11 @@ object LiquidGlassRenderer {
         pixels.indices.forEach { pixels[it] = temp[it] }
     }
 
-    private fun boxBlurVertical(pixels: IntArray, width: Int, height: Int, radius: Int) {
+    private suspend fun boxBlurVertical(pixels: IntArray, width: Int, height: Int, radius: Int) {
         val temp = IntArray(pixels.size)
         val diameter = radius * 2 + 1
         for (x in 0 until width) {
+            currentCoroutineContext().ensureActive()
             var red = 0
             var green = 0
             var blue = 0

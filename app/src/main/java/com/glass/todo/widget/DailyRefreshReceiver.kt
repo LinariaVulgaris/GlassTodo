@@ -9,8 +9,16 @@ class DailyRefreshReceiver : BroadcastReceiver() {
 
     override fun onReceive(context: Context, intent: Intent) {
         if (intent.action != ACTION_DAILY_REFRESH) return
+        val app = context.applicationContext
         val pending = goAsync()
-        WidgetRefresher.refreshAll(context) { pending.finish() }
+        WidgetRefresher.refreshAll(app) {
+            // 单次闹钟触发后按当前本地日期重排，避免夏令时切换造成时间漂移。
+            try {
+                UpdateScheduler.sync(app)
+            } finally {
+                pending.finish()
+            }
+        }
     }
 
     companion object {

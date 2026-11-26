@@ -6,7 +6,7 @@ import com.glass.todo.R
 import com.google.android.material.timepicker.MaterialTimePicker
 import com.google.android.material.timepicker.TimeFormat
 
-/** 待办与倒数日共用的具体时间选择器。 */
+/** 待办的具体时间选择器。 */
 object DeadlineTimePicker {
 
     const val DEFAULT_MINUTE_OF_DAY = 23 * 60 + 59

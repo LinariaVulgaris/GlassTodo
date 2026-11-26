@@ -26,6 +26,30 @@ class GlassRenderGeometryTest {
     }
 
     @Test
+    fun smallCropCanGrowToMatchWidgetDisplayPixels() {
+        val size = GlassRenderGeometry.outputSize(
+            PixelCrop(0, 0, 100, 50),
+            minimumPixels = 50_000
+        )
+        assertTrue(size.width > 100)
+        assertTrue(size.height > 50)
+        assertTrue(size.pixels in 40_000..50_000)
+    }
+
+    @Test
+    fun requestedDisplayPixelsNeverExceedTransferBudget() {
+        val size = GlassRenderGeometry.outputSize(
+            PixelCrop(0, 0, 100, 50),
+            minimumPixels = 2_000_000
+        )
+        assertTrue(size.pixels <= GlassRenderGeometry.MAX_OUTPUT_PIXELS)
+        assertTrue(size.width <= GlassRenderGeometry.MAX_OUTPUT_SIDE)
+        assertTrue(size.height <= GlassRenderGeometry.MAX_OUTPUT_SIDE)
+        // 桌面背景使用 RGB_565，每像素 2 字节。
+        assertTrue(size.pixels * 2 <= 512_000)
+    }
+
+    @Test
     fun extremeAspectRatioNeverProducesZeroDimensions() {
         val size = GlassRenderGeometry.outputSize(PixelCrop(0, 0, 4000, 10), maxPixels = 25)
         assertTrue(size.width > 0)

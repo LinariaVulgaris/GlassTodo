@@ -17,27 +17,23 @@ interface TodoDao {
         """
         SELECT * FROM todos
         ORDER BY done ASC,
-                 CASE WHEN dueEpochDay IS NULL THEN 1 ELSE 0 END ASC,
-                 dueEpochDay ASC,
-                 CASE WHEN dueMinuteOfDay IS NULL THEN -1 ELSE dueMinuteOfDay END ASC,
                  sortOrder ASC,
-                 createdAt DESC
+                 createdAt DESC,
+                 id DESC
         """
     )
     fun observeAll(): Flow<List<TodoEntity>>
 
     // ---------- 给桌面组件用的同步查询（必须在子线程调用） ----------
 
-    /** 组件上只显示未完成的待办，带截止日的排在前面 */
+    /** 组件上只显示未完成的待办，顺序与 App 内手动排序一致 */
     @Query(
         """
         SELECT * FROM todos
         WHERE done = 0
-        ORDER BY CASE WHEN dueEpochDay IS NULL THEN 1 ELSE 0 END ASC,
-                 dueEpochDay ASC,
-                 CASE WHEN dueMinuteOfDay IS NULL THEN -1 ELSE dueMinuteOfDay END ASC,
-                 sortOrder ASC,
-                 createdAt DESC
+        ORDER BY sortOrder ASC,
+                 createdAt DESC,
+                 id DESC
         LIMIT :limit
         """
     )
@@ -51,11 +47,9 @@ interface TodoDao {
         """
         SELECT * FROM todos
         ORDER BY done ASC,
-                 CASE WHEN dueEpochDay IS NULL THEN 1 ELSE 0 END ASC,
-                 dueEpochDay ASC,
-                 CASE WHEN dueMinuteOfDay IS NULL THEN -1 ELSE dueMinuteOfDay END ASC,
                  sortOrder ASC,
-                 createdAt DESC
+                 createdAt DESC,
+                 id DESC
         LIMIT :limit
         """
     )
@@ -86,4 +80,7 @@ interface TodoDao {
 
     @Query("UPDATE todos SET done = 0 WHERE done = 1")
     suspend fun clearAllDone()
+
+    @Query("UPDATE todos SET sortOrder = :sortOrder WHERE id = :id")
+    suspend fun setSortOrder(id: Long, sortOrder: Int)
 }
