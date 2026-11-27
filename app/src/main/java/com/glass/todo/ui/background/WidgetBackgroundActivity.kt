@@ -1,6 +1,7 @@
 package com.glass.todo.ui.background
 
 import android.graphics.Bitmap
+import android.graphics.drawable.BitmapDrawable
 import android.net.Uri
 import android.os.Bundle
 import android.util.Log
@@ -9,6 +10,7 @@ import android.widget.Toast
 import androidx.activity.result.PickVisualMediaRequest
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.appcompat.app.AppCompatActivity
+import androidx.core.content.ContextCompat
 import androidx.core.view.ViewCompat
 import androidx.core.view.WindowInsetsCompat
 import androidx.lifecycle.lifecycleScope
@@ -30,6 +32,8 @@ import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.currentCoroutineContext
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.ensureActive
 import kotlinx.coroutines.job
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
@@ -45,8 +49,20 @@ class WidgetBackgroundActivity : AppCompatActivity() {
     private var config = WidgetBackgroundConfig()
     private var sourceBitmap: Bitmap? = null
     private var operationJob: Job? = null
+    private var previewJob: Job? = null
+    private var previewPending = false
     private var busy = false
     private var applyingTypeSelection = false
+
+    private data class ColorPreset(val buttonId: Int, val colorRes: Int)
+
+    private val colorPresets = listOf(
+        ColorPreset(R.id.btn_color_sand, R.color.background_preset_sand),
+        ColorPreset(R.id.btn_color_clay, R.color.background_preset_clay),
+        ColorPreset(R.id.btn_color_sage, R.color.background_preset_sage),
+        ColorPreset(R.id.btn_color_mist, R.color.background_preset_mist),
+        ColorPreset(R.id.btn_color_charcoal, R.color.background_preset_charcoal)
+    )
 
     private val pickImage = registerForActivityResult(
         ActivityResultContracts.PickVisualMedia()
@@ -113,10 +129,21 @@ class WidgetBackgroundActivity : AppCompatActivity() {
             config = config.copy(type = type)
             renderTypeSelection()
         }
+        colorPresets.forEach { preset ->
+            binding.backgroundColorGroup.findViewById<View>(preset.buttonId).setOnClickListener {
+                config = config.copy(color = ContextCompat.getColor(this, preset.colorRes))
+                renderColorValue()
+            }
+        }
         binding.btnPickColor.setOnClickListener {
+            val initialColor = if (config.hasColor) {
+                config.color
+            } else {
+                ContextCompat.getColor(this, colorPresets.first().colorRes)
+            }
             WidgetColorPickerDialog(
                 this,
-                config.color,
+                initialColor,
                 titleRes = R.string.background_color_picker_title,
                 sampleTextRes = R.string.background_color_picker_sample
             ) { color ->
@@ -124,12 +151,9 @@ class WidgetBackgroundActivity : AppCompatActivity() {
                 renderColorValue()
             }.show()
         }
-        binding.btnPreview.setOnClickListener { renderPreview() }
         binding.btnSave.setOnClickListener { saveBackground() }
         binding.btnClear.setOnClickListener { confirmClear() }
-        binding.cropView.onCropChanged = {
-            binding.previewImage.visibility = View.GONE
-        }
+        binding.cropView.onCropChanged = { schedulePreviewUpdate() }
         renderTypeSelection()
         renderColorValue()
     }
@@ -141,6 +165,9 @@ class WidgetBackgroundActivity : AppCompatActivity() {
 
     private fun selectTarget(target: WidgetTarget, restoredCrop: GlassCrop? = null) {
         operationJob?.cancel()
+        previewJob?.cancel()
+        previewPending = false
+        hidePreview()
         selected = target
         confirmedSize = null
         config = prefs.widgetBackgroundConfig(target.id)
@@ -177,6 +204,7 @@ class WidgetBackgroundActivity : AppCompatActivity() {
             confirmedSize = null
             binding.cropView.setAspectRatio(updated.aspectRatio, adjustCurrent = sourceBitmap != null)
             hidePreview()
+            schedulePreviewUpdate()
         }
         if (showFeedback) {
             Toast.makeText(this, R.string.background_size_refreshed, Toast.LENGTH_SHORT).show()
@@ -216,6 +244,7 @@ class WidgetBackgroundActivity : AppCompatActivity() {
             .setPositiveButton(R.string.background_confirm_and_choose) { _, _ ->
                 confirmedSize = target.widthDp to target.heightDp
                 binding.cropView.setAspectRatio(target.aspectRatio, adjustCurrent = true)
+                schedulePreviewUpdate()
                 pickImage.launch(
                     PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.ImageOnly)
                 )
@@ -226,10 +255,10 @@ class WidgetBackgroundActivity : AppCompatActivity() {
     private fun loadSource(restoredCrop: GlassCrop? = null) {
         val target = selected ?: return
         operationJob?.cancel()
+        previewJob?.cancel()
         sourceBitmap = null
         binding.cropView.setBitmap(null)
-        binding.previewImage.setImageDrawable(null)
-        binding.previewImage.visibility = View.GONE
+        hidePreview()
         setBusy(true)
         operationJob = lifecycleScope.launch {
             try {
@@ -251,6 +280,7 @@ class WidgetBackgroundActivity : AppCompatActivity() {
                     binding.cropView.setLockAspect(true)
                 }
                 binding.textEmpty.visibility = if (bitmap == null) View.VISIBLE else View.GONE
+                schedulePreviewUpdate()
             } catch (e: CancellationException) {
                 throw e
             } catch (t: Throwable) {
@@ -273,20 +303,28 @@ class WidgetBackgroundActivity : AppCompatActivity() {
             return
         }
         setBusy(true)
+        previewJob?.cancel()
+        hidePreview()
         operationJob = lifecycleScope.launch {
             try {
                 val app = applicationContext
                 val file = withContext(Dispatchers.IO) { WidgetBackgroundStore.importSource(app, uri, target.id) }
                 val bitmap = withContext(Dispatchers.IO) { WidgetBackgroundStore.loadSource(file) }
                     ?: error("decode returned null")
+                // 导入期间桌面可能已移除组件或调整尺寸，不能把旧目标的裁剪比例写回新界面。
+                val currentTarget = selected
+                if (currentTarget?.id != target.id) {
+                    withContext(Dispatchers.IO) { WidgetBackgroundStore.discardPendingSource(app, target.id) }
+                    bitmap.recycle()
+                    return@launch
+                }
                 binding.cropView.setBitmap(null)
                 sourceBitmap = bitmap
                 binding.cropView.setBitmap(bitmap)
-                binding.cropView.setDefaultCrop(target.aspectRatio)
+                binding.cropView.setDefaultCrop(currentTarget.aspectRatio)
                 binding.cropView.setLockAspect(true)
                 binding.textEmpty.visibility = View.GONE
-                binding.previewImage.setImageDrawable(null)
-                binding.previewImage.visibility = View.GONE
+                schedulePreviewUpdate()
             } catch (e: CancellationException) {
                 throw e
             } catch (t: Throwable) {
@@ -298,32 +336,59 @@ class WidgetBackgroundActivity : AppCompatActivity() {
         }
     }
 
-    private fun renderPreview() {
+    private fun schedulePreviewUpdate() {
+        previewPending = true
+        if (previewJob?.isActive == true) return
+        previewJob = lifecycleScope.launch {
+            while (previewPending) {
+                previewPending = false
+                if (!isPreviewReady()) {
+                    hidePreview()
+                    break
+                }
+                renderPreview()
+                if (previewPending) delay(PREVIEW_THROTTLE_MS)
+            }
+        }
+    }
+
+    private fun isPreviewReady(): Boolean = when (config.type) {
+        WidgetBackgroundType.IMAGE -> selected != null && sourceBitmap != null
+        WidgetBackgroundType.COLOR -> selected != null && config.hasColor
+        WidgetBackgroundType.NONE -> false
+    }
+
+    private suspend fun renderPreview() {
         val target = selected ?: return
-        if (config.type == WidgetBackgroundType.IMAGE && sourceBitmap == null) return
         val bitmap = sourceBitmap
+        if (config.type == WidgetBackgroundType.IMAGE && bitmap == null) return
         val crop = binding.cropView.getCrop()
         val previewConfig = config
-        setBusy(true)
-        operationJob = lifecycleScope.launch {
+        try {
+            val preview = WidgetPreviewRenderer.render(
+                context = this@WidgetBackgroundActivity,
+                target = target,
+                config = previewConfig,
+                source = bitmap,
+                crop = crop
+            )
             try {
-                val preview = WidgetPreviewRenderer.render(
-                    context = this@WidgetBackgroundActivity,
-                    target = target,
-                    config = previewConfig,
-                    source = bitmap,
-                    crop = crop
-                )
+                currentCoroutineContext().ensureActive()
+                if (previewPending) return
+                val previous = binding.previewImage.drawable as? BitmapDrawable
                 binding.previewImage.setImageBitmap(preview)
                 binding.previewImage.visibility = View.VISIBLE
-            } catch (e: CancellationException) {
-                throw e
-            } catch (t: Throwable) {
-                Log.e(TAG, "预览背景失败", t)
-                Toast.makeText(this@WidgetBackgroundActivity, R.string.background_render_failed, Toast.LENGTH_SHORT).show()
+                previous?.bitmap?.recycle()
             } finally {
-                if (operationJob === currentCoroutineContext().job) setBusy(false)
+                if ((binding.previewImage.drawable as? BitmapDrawable)?.bitmap !== preview) {
+                    preview.recycle()
+                }
             }
+        } catch (e: CancellationException) {
+            throw e
+        } catch (t: Throwable) {
+            Log.e(TAG, "预览背景失败", t)
+            Toast.makeText(this@WidgetBackgroundActivity, R.string.background_render_failed, Toast.LENGTH_SHORT).show()
         }
     }
 
@@ -332,6 +397,7 @@ class WidgetBackgroundActivity : AppCompatActivity() {
         val target = selected ?: return
         val bitmap = sourceBitmap
         if (config.type == WidgetBackgroundType.IMAGE && bitmap == null) return
+        if (config.type == WidgetBackgroundType.COLOR && !config.hasColor) return
         val crop = binding.cropView.getCrop()
         setBusy(true)
         operationJob = lifecycleScope.launch {
@@ -351,8 +417,20 @@ class WidgetBackgroundActivity : AppCompatActivity() {
                             )
                         }
                         try {
+                            if (selected?.id != target.id) {
+                                withContext(Dispatchers.IO) {
+                                    WidgetBackgroundStore.discardPendingSource(app, target.id)
+                                }
+                                return@launch
+                            }
                             withContext(Dispatchers.IO) {
                                 WidgetBackgroundStore.commitPendingSource(app, target.id, rendered)
+                            }
+                            if (selected?.id != target.id) {
+                                withContext(Dispatchers.IO) {
+                                    WidgetBackgroundStore.deleteFiles(app, target.id)
+                                }
+                                return@launch
                             }
                             config.copy(
                                 type = WidgetBackgroundType.IMAGE,
@@ -399,17 +477,19 @@ class WidgetBackgroundActivity : AppCompatActivity() {
 
     private fun clearBackground(target: WidgetTarget) {
         operationJob?.cancel()
+        previewJob?.cancel()
+        previewPending = false
         setBusy(true)
         operationJob = lifecycleScope.launch {
             try {
                 val app = applicationContext
                 withContext(Dispatchers.IO) { WidgetBackgroundStore.deleteFiles(app, target.id) }
+                if (selected?.id != target.id) return@launch
                 config = WidgetBackgroundConfig()
                 prefs.saveWidgetBackgroundConfig(target.id, config)
                 sourceBitmap = null
                 binding.cropView.setBitmap(null)
-                binding.previewImage.setImageDrawable(null)
-                binding.previewImage.visibility = View.GONE
+                hidePreview()
                 binding.textEmpty.visibility = View.VISIBLE
                 renderTypeSelection()
                 renderColorValue()
@@ -426,6 +506,9 @@ class WidgetBackgroundActivity : AppCompatActivity() {
     }
 
     private fun showNoWidgets() {
+        operationJob?.cancel()
+        previewJob?.cancel()
+        previewPending = false
         selected = null
         confirmedSize = null
         config = WidgetBackgroundConfig()
@@ -433,8 +516,10 @@ class WidgetBackgroundActivity : AppCompatActivity() {
         binding.textEmpty.setText(R.string.background_no_widgets)
         binding.textEmpty.visibility = View.VISIBLE
         binding.cropView.setBitmap(null)
+        hidePreview()
         renderTypeSelection()
         renderColorValue()
+        setBusy(false)
     }
 
     private fun renderTypeSelection() {
@@ -460,20 +545,41 @@ class WidgetBackgroundActivity : AppCompatActivity() {
             binding.textEmpty.visibility = View.GONE
         }
         updateButtons()
+        schedulePreviewUpdate()
     }
 
     private fun renderColorValue() {
-        val color = config.color or 0xFF000000.toInt()
-        binding.backgroundColorPreview.backgroundTintList = android.content.res.ColorStateList.valueOf(color)
-        binding.textColorValue.text = getString(
-            R.string.background_color_value,
-            color and 0xFFFFFF
-        )
+        if (config.hasColor) {
+            val color = config.color or 0xFF000000.toInt()
+            binding.textColorValue.text = getString(
+                R.string.background_color_value,
+                color and 0xFFFFFF
+            )
+        } else {
+            binding.textColorValue.setText(R.string.background_color_unset)
+        }
+
+        val checkedId = if (config.hasColor) {
+            val color = config.color or 0xFF000000.toInt()
+            colorPresets.firstOrNull {
+                ContextCompat.getColor(this, it.colorRes) == color
+            }?.buttonId
+        } else {
+            null
+        }
+        when {
+            checkedId == null -> binding.backgroundColorGroup.clearChecked()
+            binding.backgroundColorGroup.checkedButtonId != checkedId -> binding.backgroundColorGroup.check(checkedId)
+        }
+        updateButtons()
+        schedulePreviewUpdate()
     }
 
     private fun hidePreview() {
+        val previous = binding.previewImage.drawable as? BitmapDrawable
         binding.previewImage.setImageDrawable(null)
         binding.previewImage.visibility = View.GONE
+        previous?.bitmap?.recycle()
     }
 
     private fun setBusy(value: Boolean) {
@@ -484,13 +590,17 @@ class WidgetBackgroundActivity : AppCompatActivity() {
 
     private fun updateButtons() {
         val hasTarget = selected != null
-        val imageReady = config.type != WidgetBackgroundType.IMAGE || sourceBitmap != null
-        binding.btnSave.isEnabled = hasTarget && imageReady && !busy
-        binding.btnPreview.isEnabled = hasTarget && imageReady && !busy
+        val typeReady = when (config.type) {
+            WidgetBackgroundType.IMAGE -> sourceBitmap != null
+            WidgetBackgroundType.COLOR -> config.hasColor
+            WidgetBackgroundType.NONE -> true
+        }
+        binding.btnSave.isEnabled = hasTarget && typeReady && !busy
         binding.btnImport.isEnabled = hasTarget && !busy
         binding.btnRefreshSize.isEnabled = hasTarget && targets.isNotEmpty() && !busy
         binding.btnClear.isEnabled = hasTarget && !busy
         binding.btnPickColor.isEnabled = hasTarget && !busy
+        binding.backgroundColorGroup.isEnabled = hasTarget && !busy
         binding.backgroundTypeGroup.isEnabled = hasTarget && !busy
         binding.cropView.isEnabled = hasTarget && sourceBitmap != null && !busy
     }
@@ -507,6 +617,7 @@ class WidgetBackgroundActivity : AppCompatActivity() {
 
     override fun onDestroy() {
         operationJob?.cancel()
+        previewJob?.cancel()
         super.onDestroy()
     }
 
@@ -514,6 +625,7 @@ class WidgetBackgroundActivity : AppCompatActivity() {
 
     private companion object {
         const val TAG = "WidgetBackgroundActivity"
+        const val PREVIEW_THROTTLE_MS = 80L
         const val INVALID_ID = -1
         const val STATE_WIDGET_ID = "state_widget_id"
         const val STATE_CROP = "state_crop"

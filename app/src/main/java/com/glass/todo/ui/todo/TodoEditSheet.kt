@@ -1,9 +1,11 @@
 package com.glass.todo.ui.todo
 
 import android.os.Bundle
+import android.util.Log
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
+import android.widget.Toast
 import androidx.lifecycle.lifecycleScope
 import com.glass.todo.R
 import com.glass.todo.data.Repository
@@ -14,6 +16,7 @@ import com.glass.todo.util.DateText
 import com.glass.todo.widget.WidgetRefresher
 import com.google.android.material.bottomsheet.BottomSheetDialogFragment
 import com.google.android.material.datepicker.MaterialDatePicker
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.launch
@@ -181,44 +184,60 @@ class TodoEditSheet : BottomSheetDialogFragment() {
             null
         }
         val id = editingId
+        val app = requireContext().applicationContext
 
         writeJob = viewLifecycleOwner.lifecycleScope.launch {
-            if (id == NEW_ID) {
-                repo.todos.insert(
-                    TodoEntity(
-                        title = title,
-                        note = note,
-                        dueEpochDay = day,
-                        dueMinuteOfDay = minute
-                    )
-                )
-            } else {
-                val existing = withContext(Dispatchers.IO) { repo.todos.getByIdSync(id) }
-                if (existing != null) {
-                    repo.todos.update(
-                        existing.copy(
+            try {
+                if (id == NEW_ID) {
+                    repo.addTodo(
+                        TodoEntity(
                             title = title,
                             note = note,
                             dueEpochDay = day,
                             dueMinuteOfDay = minute
                         )
                     )
+                } else {
+                    val existing = withContext(Dispatchers.IO) { repo.todos.getByIdSync(id) }
+                    if (existing != null) {
+                        repo.todos.update(
+                            existing.copy(
+                                title = title,
+                                note = note,
+                                dueEpochDay = day,
+                                dueMinuteOfDay = minute
+                            )
+                        )
+                    }
                 }
+                WidgetRefresher.refreshAll(app)
+                dismissAllowingStateLoss()
+            } catch (e: CancellationException) {
+                throw e
+            } catch (t: Throwable) {
+                Log.e(TAG, "保存待办失败", t)
+                Toast.makeText(app, R.string.todo_save_failed, Toast.LENGTH_SHORT).show()
             }
-            WidgetRefresher.refreshAll(requireContext())
-            dismissAllowingStateLoss()
         }
     }
 
     private fun delete(repo: Repository) {
         if (!formLoaded || editingId == NEW_ID || writeJob?.isActive == true) return
         val id = editingId
+        val app = requireContext().applicationContext
         writeJob = viewLifecycleOwner.lifecycleScope.launch {
-            withContext(Dispatchers.IO) { repo.todos.getByIdSync(id) }?.let {
-                repo.todos.delete(it)
+            try {
+                withContext(Dispatchers.IO) { repo.todos.getByIdSync(id) }?.let {
+                    repo.todos.delete(it)
+                }
+                WidgetRefresher.refreshAll(app)
+                dismissAllowingStateLoss()
+            } catch (e: CancellationException) {
+                throw e
+            } catch (t: Throwable) {
+                Log.e(TAG, "删除待办失败", t)
+                Toast.makeText(app, R.string.todo_delete_failed, Toast.LENGTH_SHORT).show()
             }
-            WidgetRefresher.refreshAll(requireContext())
-            dismissAllowingStateLoss()
         }
     }
 
@@ -242,6 +261,7 @@ class TodoEditSheet : BottomSheetDialogFragment() {
         private const val STATE_DETAILED = "state_detailed_deadline"
         private const val STATE_FORM_LOADED = "state_form_loaded"
         const val NEW_ID = -1L
+        private const val TAG = "TodoEditSheet"
 
         fun newInstance(id: Long = NEW_ID): TodoEditSheet = TodoEditSheet().apply {
             arguments = Bundle().apply { putLong(ARG_ID, id) }

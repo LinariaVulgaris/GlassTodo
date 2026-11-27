@@ -49,11 +49,7 @@ object WidgetBackgroundNativePreview {
         val repo = Repository.get(context)
         val prefs = repo.prefs
         val pending = repo.todos.countPending()
-        val todos = if (prefs.showDoneInWidget) {
-            repo.todos.getForWidgetIncludingDone(prefs.maxTodoItems)
-        } else {
-            repo.todos.getPendingForWidget(prefs.maxTodoItems)
-        }
+        val todos = repo.sortedTodosForWidgetBlocking(prefs.maxTodoItems, prefs.showDoneInWidget)
         return TodoData(prefs, pending, todos, DayMath.today(), WidgetLayoutGeometry.todoLayout(
             WidgetLayoutGeometry.resolve(target.widthDp, target.heightDp, WidgetLayoutMode.AUTO),
             target.widthDp
@@ -211,7 +207,9 @@ object WidgetBackgroundNativePreview {
             if (todo.done) return base.withAlpha(0.4f)
             val days = todo.dueEpochDay?.let { DayMath.daysForDue(it, data.today) }
                 ?: return base
-            return WidgetPalette.colorFor(context, DayMath.urgencyOf(days), base)
+            if (!data.prefs.todoUrgentDateEnabled) return base
+            val urgent = DayMath.isUrgent(days, data.prefs.todoUrgentDateThresholdDays)
+            return WidgetPalette.colorFor(context, urgent, base)
         }
     }
 }

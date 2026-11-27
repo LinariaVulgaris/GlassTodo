@@ -61,6 +61,7 @@ class SettingsActivity : AppCompatActivity() {
         bindMaxItems()
         bindShowDone()
         bindTodoDateDisplay()
+        bindTodoUrgentDate()
         bindClearDone()
         bindProjectLink()
     }
@@ -229,6 +230,40 @@ class SettingsActivity : AppCompatActivity() {
                 else -> TodoTimePrecision.MINUTE
             }
             refreshWidgets()
+        }
+    }
+
+    private fun bindTodoUrgentDate() {
+        binding.switchTodoUrgentDate.isChecked = prefs.todoUrgentDateEnabled
+        binding.sliderTodoUrgentDate.value = prefs.todoUrgentDateThresholdDays.toFloat()
+        renderTodoUrgentDate()
+
+        binding.switchTodoUrgentDate.setOnCheckedChangeListener { _, checked ->
+            prefs.todoUrgentDateEnabled = checked
+            renderTodoUrgentDate()
+            refreshWidgets()
+        }
+        binding.sliderTodoUrgentDate.addOnChangeListener { _, value, fromUser ->
+            if (!fromUser) return@addOnChangeListener
+            prefs.todoUrgentDateThresholdDays = value.toInt()
+            renderTodoUrgentDate()
+        }
+        binding.sliderTodoUrgentDate.addOnSliderTouchListener(object : Slider.OnSliderTouchListener {
+            override fun onStartTrackingTouch(slider: Slider) = Unit
+
+            override fun onStopTrackingTouch(slider: Slider) {
+                refreshWidgets()
+            }
+        })
+    }
+
+    private fun renderTodoUrgentDate() {
+        val enabled = prefs.todoUrgentDateEnabled
+        binding.sliderTodoUrgentDate.isEnabled = enabled
+        binding.textTodoUrgentDateValue.text = if (enabled) {
+            getString(R.string.pref_todo_urgent_date_value, prefs.todoUrgentDateThresholdDays)
+        } else {
+            getString(R.string.pref_todo_urgent_date_never)
         }
     }
 

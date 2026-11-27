@@ -43,10 +43,6 @@
             android:ellipsize="end"
             android:fontFamily="sans-serif"
             android:maxLines="2"
-            android:shadowColor="#B3000000"
-            android:shadowDx="0"
-            android:shadowDy="2"
-            android:shadowRadius="8"
             android:textColor="@color/widget_text_white"
             android:textSize="14sp" />
 
@@ -58,10 +54,6 @@
             android:ellipsize="end"
             android:fontFamily="sans-serif"
             android:maxLines="1"
-            android:shadowColor="#B3000000"
-            android:shadowDx="0"
-            android:shadowDy="2"
-            android:shadowRadius="8"
             android:textColor="@color/widget_text_white"
             android:textSize="11sp"
             android:visibility="gone" />
@@ -78,10 +70,6 @@
         android:gravity="end"
         android:maxLines="1"
         android:maxWidth="104dp"
-        android:shadowColor="#B3000000"
-        android:shadowDx="0"
-        android:shadowDy="2"
-        android:shadowRadius="8"
         android:textColor="@color/widget_text_white"
         android:textSize="11sp"
         android:visibility="gone" />
@@ -92,10 +80,6 @@
         android:layout_height="wrap_content"
         android:layout_marginStart="8dp"
         android:fontFamily="sans-serif-medium"
-        android:shadowColor="#B3000000"
-        android:shadowDx="0"
-        android:shadowDy="2"
-        android:shadowRadius="8"
         android:textColor="@color/widget_text_white"
         android:textSize="11sp"
         android:visibility="gone" />

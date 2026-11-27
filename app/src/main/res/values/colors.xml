@@ -1,9 +1,8 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
     <!-- 组件上的强调色。因为组件直接叠在壁纸上，一律选高明度色，深浅壁纸都能看清 -->
-    <color name="widget_accent_today">#FFFFD166</color>
     <color name="widget_accent_soon">#FFFF8FA3</color>
-    <color name="widget_accent_past">#FFB9C6DA</color>
+    <color name="todo_date_urgent">#FFE53935</color>
 
     <!-- 可选的文字配色 -->
     <color name="widget_text_white">#FFFFFFFF</color>
@@ -11,10 +10,27 @@
     <color name="widget_text_cool">#FFE8F1FF</color>
     <color name="widget_text_mint">#FFD6F5E3</color>
 
-    <!-- App 主题 -->
-    <color name="brand_primary">#FF6C8CFF</color>
+    <!-- App 浅色主题：米白纸感底色与暖棕同色系 -->
+    <color name="brand_primary">#FF7A5C4A</color>
     <color name="brand_on_primary">#FFFFFFFF</color>
-    <color name="brand_secondary">#FF9BE7D2</color>
+    <color name="brand_secondary">#FFD9C3B2</color>
+    <color name="brand_surface">#FFFDFCF8</color>
+    <color name="brand_on_surface">#FF2D2925</color>
+    <color name="brand_surface_variant">#FFF3EEE7</color>
+    <color name="brand_on_surface_variant">#FF625A52</color>
+    <color name="brand_outline">#FF9A9086</color>
+    <color name="brand_background">#FFFDFCF8</color>
+    <color name="brand_primary_container">#FFEADBCB</color>
+    <color name="brand_on_primary_container">#FF3A2A20</color>
+    <color name="brand_secondary_container">#FFF3E2D5</color>
+    <color name="brand_on_secondary_container">#FF3F2D22</color>
+    <color name="brand_surface_container_lowest">#FFFFFFFF</color>
+    <color name="brand_surface_container_low">#FFF8F4EE</color>
+    <color name="brand_surface_container">#FFF3EEE7</color>
+    <color name="brand_surface_container_high">#FFEDE6DE</color>
+    <color name="brand_surface_container_highest">#FFE7DFD6</color>
 
-    <color name="ic_launcher_background">#FF1B1D2A</color>
+    <color name="ic_launcher_background">#FFFDFCF8</color>
+    <color name="ic_launcher_foreground">#FF7A5C4A</color>
+    <color name="ic_launcher_foreground_fill">#267A5C4A</color>
 </resources>

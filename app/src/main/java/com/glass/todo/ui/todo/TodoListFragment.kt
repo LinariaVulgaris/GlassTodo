@@ -2,9 +2,11 @@ package com.glass.todo.ui.todo
 
 import android.content.SharedPreferences
 import android.os.Bundle
+import android.util.Log
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
+import android.widget.Toast
 import androidx.fragment.app.Fragment
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.lifecycleScope
@@ -16,9 +18,13 @@ import com.glass.todo.R
 import com.glass.todo.data.Prefs
 import com.glass.todo.data.Repository
 import com.glass.todo.data.TodoEntity
+import com.glass.todo.data.TodoSorting
 import com.glass.todo.databinding.FragmentTodoListBinding
+import com.glass.todo.util.DayMath
 import com.glass.todo.widget.WidgetRefresher
 import com.google.android.material.snackbar.Snackbar
+import kotlinx.coroutines.CancellationException
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
 
 class TodoListFragment : Fragment() {
@@ -30,7 +36,12 @@ class TodoListFragment : Fragment() {
     private lateinit var prefs: Prefs
 
     private val todoDisplayListener = SharedPreferences.OnSharedPreferenceChangeListener { _, key ->
-        if (key == Prefs.KEY_TODO_DATE_DISPLAY_MODE || key == Prefs.KEY_TODO_TIME_PRECISION) {
+        if (
+            key == Prefs.KEY_TODO_DATE_DISPLAY_MODE ||
+            key == Prefs.KEY_TODO_TIME_PRECISION ||
+            key == Prefs.KEY_TODO_URGENT_DATE_ENABLED ||
+            key == Prefs.KEY_TODO_URGENT_DATE_THRESHOLD
+        ) {
             refreshDates()
         }
     }
@@ -71,7 +82,7 @@ class TodoListFragment : Fragment() {
     private fun observe(repo: Repository) {
         viewLifecycleOwner.lifecycleScope.launch {
             viewLifecycleOwner.repeatOnLifecycle(Lifecycle.State.STARTED) {
-                repo.todos.observeAll().collect { list ->
+                repo.observeTodos().collect { list ->
                     adapter.submitList(list)
                     binding.todoEmpty.visibility = if (list.isEmpty()) View.VISIBLE else View.GONE
                 }
@@ -80,14 +91,30 @@ class TodoListFragment : Fragment() {
     }
 
     fun refreshDates() {
-        if (::adapter.isInitialized) adapter.refreshDates()
+        if (!::adapter.isInitialized) return
+        val sorted = TodoSorting.sort(
+            adapter.orderedItems(),
+            prefs.todoManualSortEnabled,
+            DayMath.today()
+        )
+        adapter.submitList(sorted)
+        adapter.refreshDates()
     }
 
     private fun toggle(todo: TodoEntity, repo: Repository) {
+        val app = requireContext().applicationContext
         viewLifecycleOwner.lifecycleScope.launch {
-            repo.todos.toggleDone(todo.id)
-            // 桌面组件不会自己感知数据库变化，必须显式推一次
-            WidgetRefresher.refreshAll(requireContext())
+            try {
+                repo.todos.toggleDone(todo.id)
+                // 桌面组件不会自己感知数据库变化，必须显式推一次
+                WidgetRefresher.refreshAll(app)
+            } catch (e: CancellationException) {
+                throw e
+            } catch (t: Throwable) {
+                Log.e(TAG, "切换待办状态失败", t)
+                adapter.refreshDates()
+                Toast.makeText(app, R.string.todo_toggle_failed, Toast.LENGTH_SHORT).show()
+            }
         }
     }
 
@@ -139,8 +166,16 @@ class TodoListFragment : Fragment() {
                 val orderedIds = adapter.orderedItems().map { it.id }
                 val app = requireContext().applicationContext
                 viewLifecycleOwner.lifecycleScope.launch {
-                    repo.reorderTodos(orderedIds)
-                    WidgetRefresher.refreshAll(app)
+                    try {
+                        repo.applyManualTodoOrder(orderedIds)
+                        WidgetRefresher.refreshAll(app)
+                    } catch (e: CancellationException) {
+                        throw e
+                    } catch (t: Throwable) {
+                        Log.e(TAG, "保存待办顺序失败", t)
+                        adapter.submitList(repo.observeTodos().first())
+                        Toast.makeText(app, R.string.todo_reorder_failed, Toast.LENGTH_SHORT).show()
+                    }
                 }
             }
 
@@ -148,19 +183,36 @@ class TodoListFragment : Fragment() {
                 val item = adapter.itemAt(viewHolder.bindingAdapterPosition) ?: return
                 val app = requireContext().applicationContext
                 viewLifecycleOwner.lifecycleScope.launch {
-                    repo.todos.delete(item)
-                    WidgetRefresher.refreshAll(app)
-                    Snackbar.make(binding.root, R.string.deleted_undo_hint, Snackbar.LENGTH_LONG)
-                        .setAnchorView(binding.todoFab)
-                        .setAction(R.string.action_undo) {
-                            // 撤销必须使用独立的页面生命周期作用域，不能挂在已结束的删除协程里。
-                            viewLifecycleOwner.lifecycleScope.launch {
-                                // 原样写回，保留 id、创建时间和手动顺序。
-                                repo.todos.insert(item)
-                                WidgetRefresher.refreshAll(app)
+                    try {
+                        repo.todos.delete(item)
+                        WidgetRefresher.refreshAll(app)
+                        val root = _binding?.root ?: return@launch
+                        Snackbar.make(root, R.string.deleted_undo_hint, Snackbar.LENGTH_LONG)
+                            .setAnchorView(binding.todoFab)
+                            .setAction(R.string.action_undo) {
+                                // 撤销必须使用独立的页面生命周期作用域，不能挂在已结束的删除协程里。
+                                viewLifecycleOwner.lifecycleScope.launch {
+                                    try {
+                                        // 原样恢复 id、创建时间和手动顺序；重复撤销不会覆盖现有记录。
+                                        repo.todos.insertIfAbsent(item)
+                                        WidgetRefresher.refreshAll(app)
+                                    } catch (e: CancellationException) {
+                                        throw e
+                                    } catch (t: Throwable) {
+                                        Log.e(TAG, "撤销删除失败", t)
+                                        Toast.makeText(app, R.string.todo_restore_failed, Toast.LENGTH_SHORT).show()
+                                    }
+                                }
                             }
-                        }
-                        .show()
+                            .show()
+                    } catch (e: CancellationException) {
+                        throw e
+                    } catch (t: Throwable) {
+                        Log.e(TAG, "删除待办失败", t)
+                        val restoredPosition = adapter.orderedItems().indexOfFirst { it.id == item.id }
+                        if (restoredPosition >= 0) adapter.notifyItemChanged(restoredPosition)
+                        Toast.makeText(app, R.string.todo_delete_failed, Toast.LENGTH_SHORT).show()
+                    }
                 }
             }
         }
@@ -178,6 +230,7 @@ class TodoListFragment : Fragment() {
     }
 
     private companion object {
+        const val TAG = "TodoListFragment"
         const val TAG_EDIT = "todo_edit_sheet"
     }
 }

@@ -23,13 +23,24 @@ class TodoDateTextTest {
     }
 
     @Test
-    fun `days mode shows remaining days and optional time`() {
+    fun `days mode hides deadline and time`() {
         val labels = TodoDateText.labels(
             dueDay, 485, TodoDateDisplayMode.DAYS, TodoTimePrecision.MINUTE, today
         )
 
         assertNull(labels.deadline)
-        assertEquals("剩 3 天 · 08:05", labels.remaining)
+        assertEquals("剩 3 天", labels.remaining)
+    }
+
+    @Test
+    fun `days mode ignores all time precision options`() {
+        TodoTimePrecision.entries.forEach { precision ->
+            val labels = TodoDateText.labels(
+                dueDay, 485, TodoDateDisplayMode.DAYS, precision, today
+            )
+            assertNull(labels.deadline)
+            assertEquals("剩 3 天", labels.remaining)
+        }
     }
 
     @Test

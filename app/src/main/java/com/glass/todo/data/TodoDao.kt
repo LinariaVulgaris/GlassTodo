@@ -5,6 +5,7 @@ import androidx.room.Delete
 import androidx.room.Insert
 import androidx.room.OnConflictStrategy
 import androidx.room.Query
+import androidx.room.Transaction
 import androidx.room.Update
 import kotlinx.coroutines.flow.Flow
 
@@ -22,11 +23,10 @@ interface TodoDao {
                  id DESC
         """
     )
-    fun observeAll(): Flow<List<TodoEntity>>
+    fun observeAllRaw(): Flow<List<TodoEntity>>
 
     // ---------- 给桌面组件用的同步查询（必须在子线程调用） ----------
 
-    /** 组件上只显示未完成的待办，顺序与 App 内手动排序一致 */
     @Query(
         """
         SELECT * FROM todos
@@ -34,10 +34,9 @@ interface TodoDao {
         ORDER BY sortOrder ASC,
                  createdAt DESC,
                  id DESC
-        LIMIT :limit
         """
     )
-    fun getPendingForWidget(limit: Int): List<TodoEntity>
+    fun getPendingForWidgetRaw(): List<TodoEntity>
 
     @Query("SELECT COUNT(*) FROM todos WHERE done = 0")
     fun countPending(): Int
@@ -50,18 +49,35 @@ interface TodoDao {
                  sortOrder ASC,
                  createdAt DESC,
                  id DESC
-        LIMIT :limit
         """
     )
-    fun getForWidgetIncludingDone(limit: Int): List<TodoEntity>
+    fun getForWidgetIncludingDoneRaw(): List<TodoEntity>
+
+    @Query("SELECT EXISTS(SELECT 1 FROM todos WHERE sortOrder != 0 LIMIT 1)")
+    fun hasManualSortOrder(): Boolean
+
+    @Query("SELECT COALESCE(MAX(sortOrder), -1) FROM todos")
+    fun maxSortOrder(): Int
 
     @Query("SELECT * FROM todos WHERE id = :id")
     fun getByIdSync(id: Long): TodoEntity?
 
     // ---------- 写入 ----------
 
-    @Insert(onConflict = OnConflictStrategy.REPLACE)
+    @Insert
     suspend fun insert(todo: TodoEntity): Long
+
+    /** 撤销删除只恢复缺失记录；即使调用重复也不会覆盖同 ID 的现有内容。 */
+    @Insert(onConflict = OnConflictStrategy.IGNORE)
+    suspend fun insertIfAbsent(todo: TodoEntity): Long
+
+    /** 顺序号读取与插入必须在同一事务中，避免并发新建拿到相同权重。 */
+    @Transaction
+    suspend fun insertWithNextSortOrder(todo: TodoEntity): Long {
+        val maxOrder = maxSortOrder()
+        check(maxOrder < Int.MAX_VALUE) { "待办顺序号已达上限" }
+        return insert(todo.copy(sortOrder = maxOrder + 1))
+    }
 
     @Update
     suspend fun update(todo: TodoEntity)

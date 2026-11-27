@@ -94,11 +94,7 @@ class TodoWidgetProvider : AppWidgetProvider() {
             val repo = Repository.get(context)
             val prefs = repo.prefs
             val pendingCount = repo.todos.countPending()
-            val todos = if (prefs.showDoneInWidget) {
-                repo.todos.getForWidgetIncludingDone(prefs.maxTodoItems)
-            } else {
-                repo.todos.getPendingForWidget(prefs.maxTodoItems)
-            }
+            val todos = repo.sortedTodosForWidgetBlocking(prefs.maxTodoItems, prefs.showDoneInWidget)
             val today = DayMath.today()
 
             ids.forEach { id ->
@@ -126,11 +122,7 @@ class TodoWidgetProvider : AppWidgetProvider() {
             val repo = Repository.get(context)
             val prefs = repo.prefs
             val pendingCount = repo.todos.countPending()
-            val todos = if (prefs.showDoneInWidget) {
-                repo.todos.getForWidgetIncludingDone(prefs.maxTodoItems)
-            } else {
-                repo.todos.getPendingForWidget(prefs.maxTodoItems)
-            }
+            val todos = repo.sortedTodosForWidgetBlocking(prefs.maxTodoItems, prefs.showDoneInWidget)
             val today = DayMath.today()
             val mode = WidgetLayoutGeometry.resolve(widthDp, heightDp, WidgetLayoutMode.AUTO)
             val todoLayout = WidgetLayoutGeometry.todoLayout(mode, widthDp)
@@ -291,6 +283,7 @@ class TodoWidgetProvider : AppWidgetProvider() {
                 from = today,
                 compact = compact
             )
+            val dateColor = badgeColor(context, prefs, base, todo, today)
             if (compact) {
                 val metadata = labels.multiline
                 if (metadata == null) {
@@ -300,7 +293,7 @@ class TodoWidgetProvider : AppWidgetProvider() {
                     rv.setTextViewText(R.id.item_deadline, metadata)
                     rv.setTextColor(
                         R.id.item_deadline,
-                        badgeColor(context, base, todo, today)
+                        dateColor
                     )
                 }
                 rv.setViewVisibility(R.id.item_badge, View.GONE)
@@ -312,7 +305,7 @@ class TodoWidgetProvider : AppWidgetProvider() {
                     rv.setTextViewText(R.id.item_deadline, labels.deadline)
                     rv.setTextColor(
                         R.id.item_deadline,
-                        badgeColor(context, base, todo, today)
+                        dateColor
                     )
                 }
                 if (labels.remaining == null) {
@@ -320,7 +313,7 @@ class TodoWidgetProvider : AppWidgetProvider() {
                 } else {
                     rv.setViewVisibility(R.id.item_badge, View.VISIBLE)
                     rv.setTextViewText(R.id.item_badge, labels.remaining)
-                    rv.setTextColor(R.id.item_badge, badgeColor(context, base, todo, today))
+                    rv.setTextColor(R.id.item_badge, dateColor)
                 }
             }
 
@@ -336,16 +329,17 @@ class TodoWidgetProvider : AppWidgetProvider() {
 
         private fun badgeColor(
             context: Context,
+            prefs: Prefs,
             base: Int,
             todo: TodoEntity,
             today: LocalDate
         ): Int {
             if (todo.done) return base.withAlpha(0.4f)
-            // 没有截止日就不会有徽标；有截止日但离得还远时保持白色即可，
-            // 只有临近 / 逾期才用强调色，避免整屏都是彩色。
             val due = todo.dueEpochDay ?: return base
+            if (!prefs.todoUrgentDateEnabled) return base
             val days = DayMath.daysForDue(due, today) ?: return base
-            return WidgetPalette.colorFor(context, DayMath.urgencyOf(days), base)
+            val urgent = DayMath.isUrgent(days, prefs.todoUrgentDateThresholdDays)
+            return WidgetPalette.colorFor(context, urgent, base)
         }
     }
 }

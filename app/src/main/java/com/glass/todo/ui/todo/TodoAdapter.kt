@@ -12,7 +12,6 @@ import com.glass.todo.data.TodoEntity
 import com.glass.todo.databinding.ItemTodoBinding
 import com.glass.todo.util.DayMath
 import com.glass.todo.util.TodoDateText
-import com.glass.todo.util.Urgency
 import com.glass.todo.util.WidgetPalette
 
 class TodoAdapter(
@@ -95,12 +94,9 @@ class TodoAdapter(
                 timePrecision = prefs.todoTimePrecision
             )
             val days = item.dueEpochDay?.let { DayMath.daysForDue(it) }
-            val urgency = days?.let { DayMath.urgencyOf(it) }
-            val dateColor = if (item.done || urgency == null || urgency == Urgency.LATER) {
-                defaultBadgeColor
-            } else {
-                WidgetPalette.colorFor(b.root.context, urgency, defaultBadgeColor)
-            }
+            val urgent = !item.done && prefs.todoUrgentDateEnabled && days != null &&
+                DayMath.isUrgent(days, prefs.todoUrgentDateThresholdDays)
+            val dateColor = WidgetPalette.colorFor(b.root.context, urgent, defaultBadgeColor)
 
             if (labels.deadline == null) {
                 b.itemDeadline.visibility = View.GONE

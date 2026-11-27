@@ -11,7 +11,18 @@ class WidgetBackgroundConfigTest {
     fun defaultBackgroundDoesNotRequireAnImage() {
         val config = WidgetBackgroundConfig()
         assertEquals(WidgetBackgroundType.NONE, config.type)
+        assertEquals(0x00000000, config.color)
+        assertFalse(config.hasColor)
         assertFalse(config.isImage)
+    }
+
+    @Test
+    fun opaqueColorIsConsideredSet() {
+        val config = WidgetBackgroundConfig(
+            type = WidgetBackgroundType.COLOR,
+            color = 0xFFFDFCF8.toInt()
+        )
+        assertTrue(config.hasColor)
     }
 
     @Test

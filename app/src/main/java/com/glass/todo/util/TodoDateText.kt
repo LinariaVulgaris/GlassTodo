@@ -36,14 +36,7 @@ object TodoDateText {
             null
         }
         val remaining = if (mode != TodoDateDisplayMode.DDL) {
-            val days = DayMath.badgeFor(dueEpochDay, from) ?: return Labels(deadline, null)
-            // 只显示天数时，用户仍可选择把该事项已设置的具体时间附在后面。
-            val time = if (mode == TodoDateDisplayMode.DAYS && minute != null) {
-                DateText.formatTimeByPrecision(minute, timePrecision, compact)
-            } else {
-                null
-            }
-            if (time == null) days else "$days · $time"
+            DayMath.badgeFor(dueEpochDay, from)
         } else {
             null
         }

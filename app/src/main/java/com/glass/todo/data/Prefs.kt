@@ -46,7 +46,7 @@ class Prefs(context: Context) {
             sp.edit { putInt(KEY_CUSTOM_TEXT_COLOR, value or 0xFF000000.toInt()) }
         }
 
-    /** 组件文字大小倍率，100 表示保持原始设计字号。 */
+    /** 组件文字大小倍率，100 表示原始设计字号，默认 115%。 */
     var widgetFontScalePercent: Int
         get() = sp.getInt(KEY_FONT_SCALE_PERCENT, DEFAULT_FONT_SCALE_PERCENT)
             .coerceIn(WIDGET_FONT_SCALE_MIN, WIDGET_FONT_SCALE_MAX)
@@ -95,6 +95,36 @@ class Prefs(context: Context) {
             sp.edit { putString(KEY_TODO_TIME_PRECISION, value.name) }
         }
 
+    var todoUrgentDateEnabled: Boolean
+        get() = sp.getBoolean(KEY_TODO_URGENT_DATE_ENABLED, true)
+        set(value) {
+            sp.edit { putBoolean(KEY_TODO_URGENT_DATE_ENABLED, value) }
+        }
+
+    /** 剩余天数小于等于该值时显示红色；已逾期始终符合条件。 */
+    var todoUrgentDateThresholdDays: Int
+        get() = sp.getInt(KEY_TODO_URGENT_DATE_THRESHOLD, DEFAULT_TODO_URGENT_DATE_THRESHOLD)
+            .coerceIn(0, TODO_URGENT_DATE_THRESHOLD_MAX)
+        set(value) {
+            sp.edit {
+                putInt(KEY_TODO_URGENT_DATE_THRESHOLD, value.coerceIn(0, TODO_URGENT_DATE_THRESHOLD_MAX))
+            }
+        }
+
+    /** 是否已经根据旧数据判断过待办排序模式。 */
+    var todoManualSortInitialized: Boolean
+        get() = sp.getBoolean(KEY_TODO_MANUAL_SORT_INITIALIZED, false)
+        set(value) {
+            sp.edit { putBoolean(KEY_TODO_MANUAL_SORT_INITIALIZED, value) }
+        }
+
+    /** 用户拖拽排序后固定使用手动顺序；否则按截止时间自动排序。 */
+    var todoManualSortEnabled: Boolean
+        get() = sp.getBoolean(KEY_TODO_MANUAL_SORT, false)
+        set(value) {
+            sp.edit { putBoolean(KEY_TODO_MANUAL_SORT, value) }
+        }
+
     /**
      * 布局设置入口已移除，运行时始终跟随桌面报告的组件形状。
      * 旧版本写下的固定预设不再读取，升级后也会立即恢复自动切换。
@@ -119,10 +149,14 @@ class Prefs(context: Context) {
                 right = sp.getFloat(prefix + "crop_right", 1f),
                 bottom = sp.getFloat(prefix + "crop_bottom", 1f)
             ).normalized()
+            val storedColor = sp.getInt(prefix + "color", WidgetBackgroundConfig.DEFAULT_COLOR)
             return WidgetBackgroundConfig(
                 type = type,
-                color = (sp.getInt(prefix + "color", WidgetBackgroundConfig.DEFAULT_COLOR)
-                    or 0xFF000000.toInt()),
+                color = if (type == WidgetBackgroundType.COLOR && (storedColor ushr 24) != 0) {
+                    storedColor or 0xFF000000.toInt()
+                } else {
+                    WidgetBackgroundConfig.DEFAULT_COLOR
+                },
                 sourceFileName = sp.getString(prefix + "source", null),
                 crop = crop.takeIf { it.isValid }
             )
@@ -145,7 +179,7 @@ class Prefs(context: Context) {
         val crop = config.crop?.normalized()
         sp.edit {
             putString(prefix + "type", config.type.name)
-            putInt(prefix + "color", config.color or 0xFF000000.toInt())
+            putInt(prefix + "color", config.color)
             putString(prefix + "source", config.sourceFileName)
             if (crop == null) {
                 remove(prefix + "crop_left")
@@ -161,7 +195,7 @@ class Prefs(context: Context) {
         }
     }
 
-    /** 读取某个组件的液态玻璃配置；没有配置时默认关闭，不影响原有透明背景。 */
+    /** 读取某个组件的旧版玻璃配置；没有配置时默认关闭，不影响原有透明背景。 */
     fun widgetGlassConfig(appWidgetId: Int): WidgetGlassConfig {
         val prefix = KEY_GLASS_PREFIX + appWidgetId + "_"
         val crop = GlassCrop(
@@ -225,14 +259,20 @@ class Prefs(context: Context) {
         private const val KEY_SHOW_DONE = "show_done_in_widget"
         internal const val KEY_TODO_DATE_DISPLAY_MODE = "todo_date_display_mode"
         internal const val KEY_TODO_TIME_PRECISION = "todo_time_precision"
+        internal const val KEY_TODO_URGENT_DATE_ENABLED = "todo_urgent_date_enabled"
+        internal const val KEY_TODO_URGENT_DATE_THRESHOLD = "todo_urgent_date_threshold"
+        private const val KEY_TODO_MANUAL_SORT_INITIALIZED = "todo_manual_sort_initialized"
+        private const val KEY_TODO_MANUAL_SORT = "todo_manual_sort"
         private const val KEY_LAYOUT_PREFIX = "widget_layout_"
         private const val KEY_GLASS_PREFIX = "widget_glass_"
         private const val KEY_BACKGROUND_PREFIX = "widget_background_"
 
         const val DEFAULT_TEXT_COLOR = 0xFFFFFFFF.toInt()
-        const val DEFAULT_FONT_SCALE_PERCENT = 100
+        const val DEFAULT_FONT_SCALE_PERCENT = 115
         const val WIDGET_FONT_SCALE_MIN = 80
         const val WIDGET_FONT_SCALE_MAX = 140
         const val DEFAULT_MAX_ITEMS = 6
+        const val TODO_URGENT_DATE_THRESHOLD_MAX = 30
+        private const val DEFAULT_TODO_URGENT_DATE_THRESHOLD = 7
     }
 }

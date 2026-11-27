@@ -17,7 +17,10 @@ data class WidgetBackgroundConfig(
     val isImage: Boolean
         get() = type == WidgetBackgroundType.IMAGE && !sourceFileName.isNullOrBlank()
 
+    val hasColor: Boolean
+        get() = (color ushr 24) != 0
+
     companion object {
-        const val DEFAULT_COLOR = 0xFF263238.toInt()
+        const val DEFAULT_COLOR = 0x00000000
     }
 }

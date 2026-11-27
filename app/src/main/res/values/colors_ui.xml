@@ -2,4 +2,14 @@
 <resources>
     <!-- App 内列表的次要文字色，与组件上的强调色区分开 -->
     <color name="badge_default">#FF8A8A93</color>
+
+    <!-- 组件背景预设色块 -->
+    <color name="background_preset_sand">#FFF3E7D3</color>
+    <color name="background_preset_clay">#FFE7C8B8</color>
+    <color name="background_preset_sage">#FFDDE8D8</color>
+    <color name="background_preset_mist">#FFDCE8EE</color>
+    <color name="background_preset_charcoal">#FF3A4148</color>
+    <color name="background_swatch_text_dark">#FF2D2925</color>
+    <color name="background_swatch_text_light">#FFFFFFFF</color>
+    <color name="background_swatch_stroke_selected">#FF2D2925</color>
 </resources>

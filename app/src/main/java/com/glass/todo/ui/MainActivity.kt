@@ -54,6 +54,7 @@ class MainActivity : AppCompatActivity() {
         super.onStart()
         val filter = IntentFilter().apply {
             addAction(Intent.ACTION_DATE_CHANGED)
+            addAction(Intent.ACTION_TIME_CHANGED)
             addAction(Intent.ACTION_TIMEZONE_CHANGED)
         }
         // 这些是系统受保护广播，用 NOT_EXPORTED 明确表示不接收其他 App 伪造的广播。

@@ -40,11 +40,15 @@
     <string name="pref_todo_date_ddl">DDL</string>
     <string name="pref_todo_date_days">剩余天数</string>
     <string name="pref_todo_date_both">都显示</string>
-    <string name="pref_todo_time_precision">具体时间精度</string>
-    <string name="pref_todo_time_none">不显示</string>
+    <string name="pref_todo_time_precision">DDL时间精度</string>
+    <string name="pref_todo_time_none">到日期</string>
     <string name="pref_todo_time_hour">到小时</string>
     <string name="pref_todo_time_minute">到分钟</string>
-    <string name="pref_todo_time_precision_summary">仅对待办中已设置的具体时间生效。只显示剩余天数时，具体时间会附在天数后面。</string>
+    <string name="pref_todo_urgent_date">红色日期提醒</string>
+    <string name="pref_todo_urgent_date_summary">剩余天数小于等于临界值时显示红色，已逾期也显示红色；关闭后始终使用正常字体颜色。</string>
+    <string name="pref_todo_urgent_date_threshold">红字临界点</string>
+    <string name="pref_todo_urgent_date_value">剩余 %1$d 天及以内</string>
+    <string name="pref_todo_urgent_date_never">从不显示红色</string>
     <string name="pref_group_data">数据</string>
     <string name="pref_clear_done">清空所有已完成</string>
 

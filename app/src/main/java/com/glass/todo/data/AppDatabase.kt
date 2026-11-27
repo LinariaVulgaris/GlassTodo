@@ -45,7 +45,7 @@ abstract class AppDatabase : RoomDatabase() {
         }
 
         /**
-         * 把旧的日期排序固化成 sortOrder，之后列表完全按用户长按拖动后的顺序显示。
+         * 为旧数据补齐稳定的 sortOrder，供升级后的手动排序模式使用。
          * 只更新已有排序列，不重建表，也不删除或重写事项内容。
          */
         val MIGRATION_2_3 = object : Migration(2, 3) {

@@ -154,24 +154,6 @@
                     android:text="@string/background_crop_hint"
                     android:textAppearance="@style/TextAppearance.Material3.BodySmall" />
 
-                <com.google.android.material.button.MaterialButton
-                    android:id="@+id/btn_preview"
-                    style="@style/Widget.Material3.Button.OutlinedButton"
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:layout_marginTop="8dp"
-                    android:text="@string/background_preview" />
-
-                <ImageView
-                    android:id="@+id/preview_image"
-                    android:layout_width="match_parent"
-                    android:layout_height="220dp"
-                    android:layout_marginTop="10dp"
-                    android:background="?attr/colorSurfaceVariant"
-                    android:contentDescription="@string/background_preview"
-                    android:padding="8dp"
-                    android:scaleType="fitCenter"
-                    android:visibility="gone" />
             </LinearLayout>
 
             <LinearLayout
@@ -182,12 +164,135 @@
                 android:orientation="vertical"
                 android:visibility="gone">
 
-                <View
-                    android:id="@+id/background_color_preview"
+                <TextView
                     android:layout_width="match_parent"
-                    android:layout_height="72dp"
-                    android:background="@drawable/bg_color_preview"
-                    android:contentDescription="@string/background_color_preview" />
+                    android:layout_height="wrap_content"
+                    android:text="@string/background_preset_label"
+                    android:textAppearance="@style/TextAppearance.Material3.LabelLarge" />
+
+                <com.google.android.material.button.MaterialButtonToggleGroup
+                        android:id="@+id/background_color_group"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="6dp"
+                        app:selectionRequired="false"
+                        app:singleSelection="true">
+
+                        <com.google.android.material.button.MaterialButton
+                            android:id="@+id/btn_color_sand"
+                            style="@style/Widget.Material3.Button.OutlinedButton"
+                            android:layout_width="0dp"
+                            android:layout_height="48dp"
+                            android:layout_weight="1"
+                            android:ellipsize="end"
+                            android:maxLines="1"
+                            android:insetLeft="0dp"
+                            android:insetTop="0dp"
+                            android:insetRight="0dp"
+                            android:insetBottom="0dp"
+                            android:minWidth="0dp"
+                            android:paddingStart="6dp"
+                            android:paddingEnd="6dp"
+                            android:textSize="13sp"
+                            android:text="@string/background_color_sand_label"
+                            android:textColor="@color/background_swatch_text_dark"
+                            app:backgroundTint="@color/background_preset_sand"
+                            app:cornerRadius="14dp"
+                            app:strokeColor="@color/background_swatch_stroke"
+                            app:strokeWidth="2dp" />
+
+                        <com.google.android.material.button.MaterialButton
+                            android:id="@+id/btn_color_clay"
+                            style="@style/Widget.Material3.Button.OutlinedButton"
+                            android:layout_width="0dp"
+                            android:layout_height="48dp"
+                            android:layout_weight="1"
+                            android:ellipsize="end"
+                            android:maxLines="1"
+                            android:insetLeft="0dp"
+                            android:insetTop="0dp"
+                            android:insetRight="0dp"
+                            android:insetBottom="0dp"
+                            android:minWidth="0dp"
+                            android:paddingStart="6dp"
+                            android:paddingEnd="6dp"
+                            android:textSize="13sp"
+                            android:text="@string/background_color_clay_label"
+                            android:textColor="@color/background_swatch_text_dark"
+                            app:backgroundTint="@color/background_preset_clay"
+                            app:cornerRadius="14dp"
+                            app:strokeColor="@color/background_swatch_stroke"
+                            app:strokeWidth="2dp" />
+
+                        <com.google.android.material.button.MaterialButton
+                            android:id="@+id/btn_color_sage"
+                            style="@style/Widget.Material3.Button.OutlinedButton"
+                            android:layout_width="0dp"
+                            android:layout_height="48dp"
+                            android:layout_weight="1"
+                            android:ellipsize="end"
+                            android:maxLines="1"
+                            android:insetLeft="0dp"
+                            android:insetTop="0dp"
+                            android:insetRight="0dp"
+                            android:insetBottom="0dp"
+                            android:minWidth="0dp"
+                            android:paddingStart="6dp"
+                            android:paddingEnd="6dp"
+                            android:textSize="13sp"
+                            android:text="@string/background_color_sage_label"
+                            android:textColor="@color/background_swatch_text_dark"
+                            app:backgroundTint="@color/background_preset_sage"
+                            app:cornerRadius="14dp"
+                            app:strokeColor="@color/background_swatch_stroke"
+                            app:strokeWidth="2dp" />
+
+                        <com.google.android.material.button.MaterialButton
+                            android:id="@+id/btn_color_mist"
+                            style="@style/Widget.Material3.Button.OutlinedButton"
+                            android:layout_width="0dp"
+                            android:layout_height="48dp"
+                            android:layout_weight="1"
+                            android:ellipsize="end"
+                            android:maxLines="1"
+                            android:insetLeft="0dp"
+                            android:insetTop="0dp"
+                            android:insetRight="0dp"
+                            android:insetBottom="0dp"
+                            android:minWidth="0dp"
+                            android:paddingStart="6dp"
+                            android:paddingEnd="6dp"
+                            android:textSize="13sp"
+                            android:text="@string/background_color_mist_label"
+                            android:textColor="@color/background_swatch_text_dark"
+                            app:backgroundTint="@color/background_preset_mist"
+                            app:cornerRadius="14dp"
+                            app:strokeColor="@color/background_swatch_stroke"
+                            app:strokeWidth="2dp" />
+
+                        <com.google.android.material.button.MaterialButton
+                            android:id="@+id/btn_color_charcoal"
+                            style="@style/Widget.Material3.Button.OutlinedButton"
+                            android:layout_width="0dp"
+                            android:layout_height="48dp"
+                            android:layout_weight="1"
+                            android:ellipsize="end"
+                            android:maxLines="1"
+                            android:insetLeft="0dp"
+                            android:insetTop="0dp"
+                            android:insetRight="0dp"
+                            android:insetBottom="0dp"
+                            android:minWidth="0dp"
+                            android:paddingStart="6dp"
+                            android:paddingEnd="6dp"
+                            android:textSize="13sp"
+                            android:text="@string/background_color_charcoal_label"
+                            android:textColor="@color/background_swatch_text_light"
+                            app:backgroundTint="@color/background_preset_charcoal"
+                            app:cornerRadius="14dp"
+                            app:strokeColor="@color/background_swatch_stroke"
+                            app:strokeWidth="2dp" />
+                    </com.google.android.material.button.MaterialButtonToggleGroup>
 
                 <TextView
                     android:id="@+id/text_color_value"
@@ -204,6 +309,24 @@
                     android:layout_marginTop="8dp"
                     android:text="@string/background_pick_color" />
             </LinearLayout>
+
+            <TextView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="16dp"
+                android:text="@string/background_preview"
+                android:textAppearance="@style/TextAppearance.Material3.LabelLarge" />
+
+            <ImageView
+                android:id="@+id/preview_image"
+                android:layout_width="match_parent"
+                android:layout_height="220dp"
+                android:layout_marginTop="6dp"
+                android:background="?attr/colorSurfaceVariant"
+                android:contentDescription="@string/background_preview"
+                android:padding="8dp"
+                android:scaleType="fitCenter"
+                android:visibility="gone" />
 
             <TextView
                 android:layout_width="match_parent"

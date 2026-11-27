@@ -4,9 +4,6 @@ import java.time.LocalDate
 import java.time.ZonedDateTime
 import java.time.temporal.ChronoUnit
 
-/** 紧急程度，决定待办日期区域的配色 */
-enum class Urgency { PAST, TODAY, SOON, LATER }
-
 /**
  * 所有「天数」计算的唯一出口。
  *
@@ -17,12 +14,7 @@ object DayMath {
 
     fun today(): LocalDate = LocalDate.now()
 
-    fun urgencyOf(days: Long): Urgency = when {
-        days < 0L -> Urgency.PAST
-        days == 0L -> Urgency.TODAY
-        days <= 7L -> Urgency.SOON
-        else -> Urgency.LATER
-    }
+    fun isUrgent(days: Long, thresholdDays: Int): Boolean = days <= thresholdDays
 
     /** 待办的截止日距离今天还有多少天；无截止日返回 null */
     fun daysForDue(dueEpochDay: Long?, from: LocalDate = today()): Long? =

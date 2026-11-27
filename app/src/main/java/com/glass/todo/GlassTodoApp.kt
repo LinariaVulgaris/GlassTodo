@@ -3,6 +3,7 @@ package com.glass.todo
 import android.app.Application
 import com.glass.todo.data.Repository
 import com.glass.todo.widget.UpdateScheduler
+import com.glass.todo.widget.WidgetRefresher
 
 class GlassTodoApp : Application() {
 
@@ -16,6 +17,7 @@ class GlassTodoApp : Application() {
         // 闹钟在应用被强制停止后会失效，重装/更新后也需要重新登记；
         // 如果用户已经移除全部组件，则顺手取消，避免无意义的每日唤醒。
         UpdateScheduler.sync(this)
+        WidgetRefresher.refreshAll(this)
     }
 
     companion object {

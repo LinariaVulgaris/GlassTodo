@@ -35,10 +35,6 @@
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:fontFamily="sans-serif-medium"
-                android:shadowColor="#B3000000"
-                android:shadowDx="0"
-                android:shadowDy="2"
-                android:shadowRadius="8"
                 android:text="@string/widget_todo_header"
                 android:textColor="@color/widget_text_white"
                 android:textSize="15sp" />
@@ -53,10 +49,6 @@
                 android:fontFamily="sans-serif"
                 android:gravity="end"
                 android:maxLines="1"
-                android:shadowColor="#B3000000"
-                android:shadowDx="0"
-                android:shadowDy="2"
-                android:shadowRadius="8"
                 android:textColor="@color/widget_text_white"
                 android:textSize="12sp" />
 
@@ -98,10 +90,6 @@
                 android:fontFamily="sans-serif"
                 android:gravity="center"
                 android:padding="12dp"
-                android:shadowColor="#B3000000"
-                android:shadowDx="0"
-                android:shadowDy="2"
-                android:shadowRadius="8"
                 android:text="@string/widget_todo_empty"
                 android:textColor="@color/widget_text_white"
                 android:textSize="13sp" />

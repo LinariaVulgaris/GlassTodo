@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- 深色模式保持原有配色 -->
+    <color name="brand_primary">#FF6C8CFF</color>
+    <color name="brand_on_primary">#FFFFFFFF</color>
+    <color name="brand_secondary">#FF9BE7D2</color>
+
+    <color name="background_swatch_stroke_selected">#FFF3EEE7</color>
+</resources>

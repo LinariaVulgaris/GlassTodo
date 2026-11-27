@@ -1,7 +1,9 @@
 package com.glass.todo.util
 
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertFalse
 import org.junit.Assert.assertNull
+import org.junit.Assert.assertTrue
 import org.junit.Test
 import java.time.Instant
 import java.time.LocalDate
@@ -44,11 +46,11 @@ class DayMathTest {
     }
 
     @Test
-    fun `urgency and todo badges have expected boundaries`() {
-        assertEquals(Urgency.PAST, DayMath.urgencyOf(-1))
-        assertEquals(Urgency.TODAY, DayMath.urgencyOf(0))
-        assertEquals(Urgency.SOON, DayMath.urgencyOf(7))
-        assertEquals(Urgency.LATER, DayMath.urgencyOf(8))
+    fun `urgent date threshold includes boundary and overdue dates`() {
+        assertTrue(DayMath.isUrgent(-1, 3))
+        assertTrue(DayMath.isUrgent(0, 0))
+        assertTrue(DayMath.isUrgent(3, 3))
+        assertFalse(DayMath.isUrgent(4, 3))
 
         val from = LocalDate.of(2026, 11, 25)
         assertNull(DayMath.badgeFor(null, from))

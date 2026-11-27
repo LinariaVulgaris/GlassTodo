@@ -11,20 +11,9 @@ fun Int.withAlpha(fraction: Float): Int {
     return (alpha shl 24) or (this and 0x00FFFFFF)
 }
 
-/**
- * 组件配色。
- *
- * 因为组件是透明背景直接叠在壁纸上，颜色必须同时满足两个条件：
- * 在深色和浅色壁纸上都能看清，所以一律选明度较高的色；
- * 紧急程度用色相区分，让用户扫一眼就知道哪个更急。
- */
+/** 日期只使用用户设定的正常文字色或红色。 */
 object WidgetPalette {
 
-    fun colorFor(context: Context, urgency: Urgency, userTextColor: Int): Int = when (urgency) {
-        Urgency.TODAY -> context.getColor(R.color.widget_accent_today)
-        Urgency.SOON -> context.getColor(R.color.widget_accent_soon)
-        Urgency.PAST -> context.getColor(R.color.widget_accent_past)
-        // 不紧急的就用用户设定的颜色，默认白色
-        Urgency.LATER -> userTextColor
-    }
+    fun colorFor(context: Context, urgent: Boolean, userTextColor: Int): Int =
+        if (urgent) context.getColor(R.color.todo_date_urgent) else userTextColor
 }

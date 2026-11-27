@@ -18,6 +18,11 @@
 
     <string name="error_title_empty">请填写标题</string>
     <string name="error_date_empty">请选择日期</string>
+    <string name="todo_save_failed">保存失败，请重试</string>
+    <string name="todo_delete_failed">删除失败，请重试</string>
+    <string name="todo_restore_failed">恢复失败，请重试</string>
+    <string name="todo_reorder_failed">排序保存失败，请重试</string>
+    <string name="todo_toggle_failed">状态更新失败，请重试</string>
 
     <string name="max_items_value">%1$d 条</string>
     <string name="clear_done_done">已清空所有已完成项</string>
@@ -27,7 +32,7 @@
     <string name="background_feature_summary">为桌面待办组件上传图片或设置纯色块背景。</string>
     <string name="background_feature_action">设置组件背景</string>
     <string name="background_setup_title">组件背景</string>
-    <string name="background_setup_intro">确认待办组件在桌面上的当前大小，再上传图片或选择纯色。</string>
+    <string name="background_setup_intro">确认待办组件在桌面上的当前大小，再上传图片、选择纯色或保持透明。</string>
     <string name="background_no_widgets">桌面上还没有 GlassTodo 组件，请先添加后再回来。</string>
     <string name="background_current_size">当前桌面尺寸：%1$d × %2$d dp · 宽高比 %3$.2f</string>
     <string name="background_size_hint">请先回到桌面长按组件，拖动边框调整到满意大小，再返回这里确认。裁剪框会按确认后的组件比例生成。</string>
@@ -39,18 +44,24 @@
     <string name="background_confirm_and_choose">确认并选择图片</string>
     <string name="background_size_changed">组件尺寸已变化，请重新确认大小后再选择图片</string>
     <string name="background_type_label">背景类型</string>
-    <string name="background_type_none">默认</string>
+    <string name="background_type_none">透明</string>
     <string name="background_type_image">图片</string>
     <string name="background_type_color">纯色</string>
     <string name="background_upload_image">上传图片</string>
     <string name="background_need_image">请先上传一张图片</string>
     <string name="background_crop_hint">拖动选框改变位置，拖动四角调整大小；比例始终保持与当前组件一致</string>
-    <string name="background_preview">预览组件最终效果</string>
-    <string name="background_static_hint">预览会带上实际待办文字。图片只做裁切，不添加模糊或玻璃效果；组件尺寸改变后裁剪比例会自动更新。</string>
-    <string name="background_color_preview">纯色背景预览</string>
+    <string name="background_preview">实时预览</string>
+    <string name="background_static_hint">预览会实时带上实际待办文字。图片只做裁切，不添加模糊或玻璃效果；纯色会按所选颜色填充。组件尺寸改变后图片裁剪比例会自动更新。</string>
+    <string name="background_preset_label">主题色块</string>
+    <string name="background_color_sand_label">沙色</string>
+    <string name="background_color_clay_label">陶土</string>
+    <string name="background_color_sage_label">鼠尾草</string>
+    <string name="background_color_mist_label">雾蓝</string>
+    <string name="background_color_charcoal_label">炭灰</string>
     <string name="background_color_value">当前颜色：#%1$06X</string>
-    <string name="background_pick_color">选择纯色颜色</string>
-    <string name="background_color_picker_title">选择背景颜色</string>
+    <string name="background_color_unset">未设置颜色（当前透明）</string>
+    <string name="background_pick_color">自定义背景颜色</string>
+    <string name="background_color_picker_title">自定义背景颜色</string>
     <string name="background_color_picker_sample">背景 Aa 123</string>
     <string name="background_restore_default">恢复默认</string>
     <string name="background_clear_confirm">恢复默认背景并删除该组件已上传的图片？</string>

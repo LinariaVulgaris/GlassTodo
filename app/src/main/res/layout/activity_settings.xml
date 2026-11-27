@@ -299,11 +299,48 @@
                     android:text="@string/pref_todo_time_minute" />
             </com.google.android.material.button.MaterialButtonToggleGroup>
 
+            <com.google.android.material.materialswitch.MaterialSwitch
+                android:id="@+id/switch_todo_urgent_date"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="20dp"
+                android:text="@string/pref_todo_urgent_date" />
+
             <TextView
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:text="@string/pref_todo_time_precision_summary"
+                android:text="@string/pref_todo_urgent_date_summary"
                 android:textAppearance="@style/TextAppearance.Material3.BodySmall" />
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="12dp"
+                android:orientation="horizontal">
+
+                <TextView
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:text="@string/pref_todo_urgent_date_threshold"
+                    android:textAppearance="@style/TextAppearance.Material3.LabelLarge" />
+
+                <TextView
+                    android:id="@+id/text_todo_urgent_date_value"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:textAppearance="@style/TextAppearance.Material3.LabelLarge"
+                    android:textColor="?attr/colorPrimary" />
+            </LinearLayout>
+
+            <com.google.android.material.slider.Slider
+                android:id="@+id/slider_todo_urgent_date"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:contentDescription="@string/pref_todo_urgent_date_threshold"
+                android:stepSize="1"
+                android:valueFrom="0"
+                android:valueTo="30" />
 
             <TextView
                 android:layout_width="match_parent"

@@ -45,12 +45,16 @@ object WidgetBackgroundLayer {
             }
 
             WidgetBackgroundType.COLOR -> {
-                views.setViewVisibility(R.id.widget_background, View.GONE)
-                views.setInt(
-                    ROOT_ID,
-                    "setBackgroundColor",
-                    config.color or 0xFF000000.toInt()
-                )
+                if (config.hasColor) {
+                    views.setViewVisibility(R.id.widget_background, View.GONE)
+                    views.setInt(
+                        ROOT_ID,
+                        "setBackgroundColor",
+                        config.color or 0xFF000000.toInt()
+                    )
+                } else {
+                    applyDefault(views, prefs)
+                }
             }
 
             WidgetBackgroundType.NONE -> applyDefault(views, prefs)
